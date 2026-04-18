@@ -55,9 +55,9 @@ class MoreHubScreen extends StatelessWidget {
                   _buildFeaturedCard(
                     context,
                     title: 'Salah Tracker',
-                    subtitle: 'Track your daily worship progress',
+                    subtitle: 'View records, history & daily log',
                     icon: Icons.show_chart_rounded,
-                    onTap: () => onNavigate('home'), // Tracker is on home right now
+                    onTap: () => onNavigate('salahCalendar'),
                   ),
                   const SizedBox(height: 24),
                   
