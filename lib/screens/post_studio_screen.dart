@@ -51,10 +51,21 @@ class _PostStudioScreenState extends State<PostStudioScreen> {
     _updateImageUrl();
   }
 
+  static const List<String> _natureKeywords = [
+    'flowers', 'mountains', 'river', 'sea', 'ocean', 'clouds', 
+    'forest', 'waterfall', 'desert', 'snowy-peaks', 'canyon'
+  ];
+
   void _updateImageUrl() {
     setState(() {
       _imageSeed = DateTime.now().millisecondsSinceEpoch;
-      _currentImageUrl = "https://loremflickr.com/1080/1920/nature,scenery,landscape?lock=$_imageSeed";
+      // Selecting 2 random keywords for better variety while staying strictly nature-focused
+      final random = Random();
+      final k1 = _natureKeywords[random.nextInt(_natureKeywords.length)];
+      final k2 = _natureKeywords[random.nextInt(_natureKeywords.length)];
+      
+      // Using LoremFlickr with "all" search mode to ensure strict matching of nature tags
+      _currentImageUrl = "https://loremflickr.com/1080/1920/$k1,$k2,nature/all?lock=$_imageSeed";
     });
   }
 
