@@ -85,7 +85,7 @@ class _SalahCalendarScreenState extends State<SalahCalendarScreen> {
             onTap: () => widget.onNavigate('salahGuide'),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(color: primary.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(color: primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
               child: Icon(Icons.info_outline_rounded, color: primary, size: 20),
             ),
           ),
@@ -123,7 +123,7 @@ class _SalahCalendarScreenState extends State<SalahCalendarScreen> {
           return count > 0 ? List.generate(count, (index) => 'done') : [];
         },
         calendarStyle: CalendarStyle(
-          todayDecoration: BoxDecoration(color: primary.withOpacity(0.2), shape: BoxShape.circle),
+          todayDecoration: BoxDecoration(color: primary.withValues(alpha: 0.2), shape: BoxShape.circle),
           selectedDecoration: BoxDecoration(color: primary, shape: BoxShape.circle),
           todayTextStyle: TextStyle(color: primary, fontWeight: FontWeight.bold),
           markersMaxCount: 5,
@@ -133,7 +133,7 @@ class _SalahCalendarScreenState extends State<SalahCalendarScreen> {
           formatButtonVisible: true,
           titleCentered: true,
           formatButtonDecoration: BoxDecoration(
-            color: primary.withOpacity(0.1),
+            color: primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           formatButtonTextStyle: TextStyle(color: primary, fontWeight: FontWeight.bold),
@@ -217,7 +217,7 @@ class _SalahCalendarScreenState extends State<SalahCalendarScreen> {
           children: [
             Container(
               width: 44, height: 44,
-              decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
               child: Icon(statusIcon, color: statusColor, size: 22),
             ),
             const SizedBox(width: 16),
@@ -253,7 +253,7 @@ class _SalahCalendarScreenState extends State<SalahCalendarScreen> {
   Widget _buildMiniTag(String label, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
       child: Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
     );
   }

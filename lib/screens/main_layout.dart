@@ -207,75 +207,75 @@ class _MainLayoutState extends State<MainLayout> {
               ),
             ),
 
-            // Floating Bottom Navigation
+            // Floating Bottom Navigation - Forcefully hidden for Post Studio
             if (_activeTab.toLowerCase() != 'poststudio')
               Positioned(
                 bottom: 30,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Container(
-                  height: 72,
-                  width: screenWidth * 0.9,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: AppTheme.background,
-                    gradient: context.watch<ThemeProvider>().activeGradient,
-                    borderRadius: BorderRadius.circular(32),
-                    boxShadow: AppShadows.dynamicSoft(primaryColor),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: tabs.map((t) {
-                      final isActive = _isTabActive(t['key'] as String);
-                      return AnimatedScaleButton(
-                        onPress: () => _handleTabPress(t['key'] as String),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 250),
-                          curve: Curves.easeOutCubic,
-                          height: 48,
-                          padding: EdgeInsets.symmetric(
-                            horizontal: isActive ? 14 : 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isActive ? primaryColor : Colors.transparent,
-                            borderRadius: BorderRadius.circular(24),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                t['icon'] as IconData,
-                                size: 20,
-                                color: isActive
-                                    ? Colors.white
-                                    : Colors.white.withValues(alpha: 0.6),
-                              ),
-                              if (isActive) ...[
-                                const SizedBox(width: 8),
-                                Flexible(
-                                  child: Text(
-                                    t['label'] as String,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w900,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    height: 72,
+                    width: screenWidth * 0.9,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.background,
+                      gradient: context.watch<ThemeProvider>().activeGradient,
+                      borderRadius: BorderRadius.circular(32),
+                      boxShadow: AppShadows.dynamicSoft(primaryColor),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: tabs.map((t) {
+                        final isActive = _isTabActive(t['key'] as String);
+                        return AnimatedScaleButton(
+                          onPress: () => _handleTabPress(t['key'] as String),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 250),
+                            curve: Curves.easeOutCubic,
+                            height: 48,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isActive ? 14 : 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isActive ? primaryColor : Colors.transparent,
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  t['icon'] as IconData,
+                                  size: 20,
+                                  color: isActive
+                                      ? Colors.white
+                                      : Colors.white.withValues(alpha: 0.6),
+                                ),
+                                if (isActive) ...[
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    child: Text(
+                                      t['label'] as String,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w900,
+                                      ),
                                     ),
                                   ),
-                                ),
+                                ],
                               ],
-                            ],
+                            ),
                           ),
-                        ),
-                      );
-                    }).toList(),
+                        );
+                      }).toList(),
+                    ),
                   ),
                 ),
               ),
-            ),
           ],
         ),
       ),
