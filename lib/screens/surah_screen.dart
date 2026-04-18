@@ -7,14 +7,21 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:audioplayers/audioplayers.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../core/theme.dart';
 import '../core/theme_provider.dart';
 import '../data/quran_repository.dart';
 
 class SurahScreen extends StatefulWidget {
   final int surahNumber;
+  final int? initialAyah;
   final Function(String, [Map<String, dynamic>?]) onNavigate;
-  const SurahScreen({super.key, required this.surahNumber, required this.onNavigate});
+  const SurahScreen({
+    super.key, 
+    required this.surahNumber, 
+    this.initialAyah,
+    required this.onNavigate
+  });
 
   @override
   State<SurahScreen> createState() => _SurahScreenState();
@@ -27,7 +34,9 @@ class _SurahScreenState extends State<SurahScreen> {
   String _surahArabicName = '';
   double _readProgress = 0;
   int? _activeBookmark;
-  final _scrollController = ScrollController();
+  
+  final ItemScrollController _itemScrollController = ItemScrollController();
+  final ItemPositionsListener _itemPositionsListener = ItemPositionsListener.create();
 
   // Audio
   final AudioPlayer _audioPlayer = AudioPlayer();
@@ -40,12 +49,12 @@ class _SurahScreenState extends State<SurahScreen> {
     super.initState();
     _fetchSurah();
     _loadBookmark();
-    _scrollController.addListener(_onScroll);
+    
+    _itemPositionsListener.itemPositions.addListener(_onScrollPositionChanged);
 
     _audioPlayer.onPlayerComplete.listen((_) {
       if (mounted) {
         setState(() { _playingAyah = null; _isPlaying = false; });
-        // Auto-advance to next ayah
         if (_playingAyah != null && _playingAyah! < _verses.length) {
           _playAyah(_playingAyah! + 1);
         }
@@ -60,16 +69,22 @@ class _SurahScreenState extends State<SurahScreen> {
 
   @override
   void dispose() {
-    _scrollController.dispose();
     _audioPlayer.dispose();
     super.dispose();
   }
 
-  void _onScroll() {
-    if (!_scrollController.hasClients) return;
-    final max = _scrollController.position.maxScrollExtent;
-    if (max > 0) {
-      setState(() => _readProgress = (_scrollController.offset / max).clamp(0.0, 1.0));
+  void _onScrollPositionChanged() {
+    if (_verses.isEmpty) return;
+    final positions = _itemPositionsListener.itemPositions.value;
+    if (positions.isEmpty) return;
+
+    // Find the last visible item to calculate progress
+    final lastIndex = positions.where((p) => p.itemTrailingEdge > 0).map((p) => p.index).reduce((a, b) => a > b ? a : b);
+    
+    // index 0 is Bismillah, so verses start at 1
+    final progress = (lastIndex / _verses.length).clamp(0.0, 1.0);
+    if ((progress - _readProgress).abs() > 0.01) {
+      setState(() => _readProgress = progress);
     }
   }
 
@@ -82,6 +97,16 @@ class _SurahScreenState extends State<SurahScreen> {
         _loading = false;
         _surahTitle = 'Surah ${widget.surahNumber}';
       });
+      
+      // Handle initial jump if provided
+      if (widget.initialAyah != null && widget.initialAyah! > 0) {
+        // Wait a bit for the list to build
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (_itemScrollController.isAttached) {
+            _itemScrollController.jumpTo(index: widget.initialAyah!);
+          }
+        });
+      }
     }
     // Get surah meta
     try {
@@ -142,9 +167,7 @@ class _SurahScreenState extends State<SurahScreen> {
     } catch (_) {}
   }
 
-  /// Play audio recitation for a specific ayah using Quran.com audio API
   Future<void> _playAyah(int ayahNum) async {
-    // If same ayah is playing, toggle pause/resume
     if (_playingAyah == ayahNum && _isPlaying) {
       await _audioPlayer.pause();
       return;
@@ -157,7 +180,6 @@ class _SurahScreenState extends State<SurahScreen> {
     setState(() { _playingAyah = ayahNum; _isLoadingAudio = true; });
 
     try {
-      // Use Quran.com audio API — reciter Al-Afasy (7)
       final verseKey = '${widget.surahNumber}:$ayahNum';
       final audioUrl = 'https://api.quran.com/api/v4/recitations/7/by_ayah/$verseKey';
       final res = await http.get(Uri.parse(audioUrl));
@@ -174,7 +196,6 @@ class _SurahScreenState extends State<SurahScreen> {
           await _audioPlayer.stop();
           await _audioPlayer.play(UrlSource(url));
         } else {
-          // Fallback: direct verse audio CDN
           final padded = ayahNum.toString().padLeft(3, '0');
           final surahPadded = widget.surahNumber.toString().padLeft(3, '0');
           final directUrl = 'https://cdn.islamic.network/quran/audio/128/ar.alafasy/$surahPadded$padded.mp3';
@@ -182,7 +203,6 @@ class _SurahScreenState extends State<SurahScreen> {
           await _audioPlayer.play(UrlSource(directUrl));
         }
       } else {
-        // Fallback CDN
         final globalAyah = _getGlobalAyahNumber(widget.surahNumber, ayahNum);
         final directUrl = 'https://cdn.islamic.network/quran/audio/128/ar.alafasy/$globalAyah.mp3';
         await _audioPlayer.stop();
@@ -205,9 +225,7 @@ class _SurahScreenState extends State<SurahScreen> {
     }
   }
 
-  /// Get the global ayah number for CDN fallback  
   int _getGlobalAyahNumber(int surah, int ayah) {
-    // Approximate: total verses before each surah (simplified)
     const verseCounts = [0,7,286,200,176,120,165,206,75,129,109,123,111,43,52,99,128,111,110,98,135,112,78,118,64,77,227,93,88,69,60,34,30,73,54,45,83,182,88,75,85,54,53,89,59,37,35,38,29,18,45,60,49,62,55,78,96,29,22,24,13,14,11,11,18,12,12,30,52,52,44,28,28,20,56,40,31,50,40,46,42,29,19,36,25,22,17,19,26,30,20,15,21,11,8,8,19,5,8,8,11,11,8,3,9,5,4,7,3,6,3,5,4,5,6];
     int total = 0;
     for (int i = 1; i < surah && i < verseCounts.length; i++) {
@@ -216,7 +234,6 @@ class _SurahScreenState extends State<SurahScreen> {
     return total + ayah;
   }
 
-  /// Show share options bottom sheet
   void _showShareOptions(Verse verse, int ayahNum) {
     showModalBottomSheet(
       context: context,
@@ -272,29 +289,23 @@ class _SurahScreenState extends State<SurahScreen> {
     );
   }
 
-  /// Share ayah as text only
   void _shareText(Verse verse, int ayahNum) {
     final text = '${verse.ar}\n\n"${verse.en}"\n\n— $_surahTitle [$ayahNum]\n\nShared via Deen360';
     Share.share(text);
   }
 
-  /// Download audio and return the temp file
   Future<File?> _downloadAyahAudio(int ayahNum) async {
     try {
       final tempDir = await getTemporaryDirectory();
-      // Sanitize filename: remove spaces and special characters that might break sharing
       final safeSurahName = _surahTitle.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_');
       final fileName = '${safeSurahName}_Ayah_$ayahNum.mp3';
       final file = File('${tempDir.path}/$fileName');
 
-      // Simple Cache: If file exists and isn't empty, reuse it
       if (await file.exists() && await file.length() > 1000) {
-        debugPrint('Deen360: Using cached audio for Ayah $ayahNum');
         return file;
       }
 
       String? audioUrl;
-      // Try Quran.com API first (Al-Afasy 7)
       final verseKey = '${widget.surahNumber}:$ayahNum';
       final apiUrl = 'https://api.quran.com/api/v4/recitations/7/by_ayah/$verseKey';
       
@@ -311,26 +322,18 @@ class _SurahScreenState extends State<SurahScreen> {
         }
       }
 
-      // Fallback URL if API fails
       audioUrl ??= 'https://cdn.islamic.network/quran/audio/128/ar.alafasy/${_getGlobalAyahNumber(widget.surahNumber, ayahNum)}.mp3';
 
-      debugPrint('Deen360: Downloading from $audioUrl');
       final audioRes = await http.get(Uri.parse(audioUrl)).timeout(const Duration(seconds: 20));
-      
-      if (audioRes.statusCode != 200) {
-        debugPrint('Deen360: Download failed with status ${audioRes.statusCode}');
-        return null;
-      }
+      if (audioRes.statusCode != 200) return null;
 
       await file.writeAsBytes(audioRes.bodyBytes);
       return file;
     } catch (e) {
-      debugPrint('Deen360: Error downloading ayah audio: $e');
       return null;
     }
   }
 
-  /// Share audio only
   Future<void> _shareAudio(Verse verse, int ayahNum) async {
     _showDownloadSnackbar();
     final file = await _downloadAyahAudio(ayahNum);
@@ -346,7 +349,6 @@ class _SurahScreenState extends State<SurahScreen> {
       _showErrorSnackbar();
     }
   }
-
 
   void _showDownloadSnackbar() {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -381,7 +383,6 @@ class _SurahScreenState extends State<SurahScreen> {
       backgroundColor: AppTheme.background,
       body: Column(
         children: [
-          // Header
           SafeArea(
             bottom: false,
             child: Column(
@@ -409,7 +410,6 @@ class _SurahScreenState extends State<SurahScreen> {
                           ],
                         ),
                       ),
-                      // Play all button
                       GestureDetector(
                         onTap: () => _playAyah(1),
                         child: Container(
@@ -428,7 +428,6 @@ class _SurahScreenState extends State<SurahScreen> {
                     ],
                   ),
                 ),
-                // Progress bar
                 Container(
                   height: 4, width: double.infinity, color: const Color(0xFFF1F5F9),
                   child: FractionallySizedBox(
@@ -441,7 +440,6 @@ class _SurahScreenState extends State<SurahScreen> {
             ),
           ),
 
-          // Now Playing Bar
           if (_playingAyah != null)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -455,7 +453,7 @@ class _SurahScreenState extends State<SurahScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Playing Ayah $_playingAyah • ${_surahTitle}',
+                      'Playing Ayah $_playingAyah • $_surahTitle',
                       style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: context.watch<ThemeProvider>().primaryColor),
                     ),
                   ),
@@ -474,12 +472,12 @@ class _SurahScreenState extends State<SurahScreen> {
               ),
             ),
 
-          // Content
           Expanded(
             child: _loading
               ?  Center(child: CircularProgressIndicator(color: context.read<ThemeProvider>().primaryColor))
-              : ListView.builder(
-                  controller: _scrollController,
+              : ScrollablePositionedList.builder(
+                  itemScrollController: _itemScrollController,
+                  itemPositionsListener: _itemPositionsListener,
                   physics: const BouncingScrollPhysics(),
                   padding: const EdgeInsets.only(bottom: 100),
                   itemCount: _verses.length + 1,
@@ -531,7 +529,6 @@ class _SurahScreenState extends State<SurahScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Ayah header with actions
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -542,7 +539,6 @@ class _SurahScreenState extends State<SurahScreen> {
                 ),
                 Row(
                   children: [
-                    // Play Button
                     _ActionBtn(
                       icon: isCurrentlyPlaying && _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
                       isActive: isCurrentlyPlaying,
@@ -550,13 +546,11 @@ class _SurahScreenState extends State<SurahScreen> {
                       onTap: () => _playAyah(ayahNum),
                     ),
                     const SizedBox(width: 10),
-                    // Share Button (opens bottom sheet)
                     _ActionBtn(
                       icon: Icons.share_rounded,
                       onTap: () => _showShareOptions(verse, ayahNum),
                     ),
                     const SizedBox(width: 10),
-                    // Bookmark Button
                     _ActionBtn(
                       icon: Icons.bookmark_rounded,
                       isActive: isBookmarked,
@@ -567,14 +561,9 @@ class _SurahScreenState extends State<SurahScreen> {
               ],
             ),
             const SizedBox(height: 20),
-
-            // Arabic text
             Text(verse.ar, style: const TextStyle(fontSize: 28, color: AppTheme.text, height: 2, fontWeight: FontWeight.w400), textAlign: TextAlign.right),
             const SizedBox(height: 20),
-
-            // Translation
             Text(verse.en, style: const TextStyle(fontSize: 16, color: Color(0xFF334155), height: 1.75, fontWeight: FontWeight.w500)),
-
             const SizedBox(height: 32),
             Container(height: 1.5, margin: const EdgeInsets.symmetric(horizontal: 10), color: const Color(0xFFF1F5F9)),
           ],

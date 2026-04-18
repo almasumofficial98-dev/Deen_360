@@ -47,6 +47,7 @@ dependencies:
   flutter_qiblah: ^3.2.0
   table_calendar: ^3.2.0
   intl: ^0.20.2
+  scrollable_positioned_list: ^0.3.8
 
 dev_dependencies:
   flutter_test:

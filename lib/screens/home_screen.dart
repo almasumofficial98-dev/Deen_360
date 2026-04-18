@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../core/theme.dart';
 import '../core/theme_provider.dart';
 import '../data/salah_repository.dart';
@@ -26,6 +27,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   // Prayer data from Aladhan
   Map<String, dynamic>? _timings;
+
+  // Bookmarks & Progress
+  Map<String, dynamic>? _lastBookmark;
 
   // Computed prayer HUD state
   String _currentPrayerName = 'LOADING';
@@ -63,20 +67,33 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Future<void> _initData() async {
     final salahRepo = context.read<SalahRepository>();
+    
+    // Load last bookmark
+    _loadLastBookmark();
 
-    // 1. Try saved location for instant display
     final saved = await salahRepo.getUserLocation();
     if (saved != null) {
       if (mounted) setState(() => _locationName = saved.city ?? 'Saved');
       _fetchTimingsAndWeather(saved.latitude, saved.longitude);
     } else {
-      // No saved location — use Makkah as default so we show data immediately
       if (mounted) setState(() => _locationName = 'Makkah');
       _fetchTimingsAndWeather(21.4225, 39.8262);
     }
 
-    // 2. Live GPS in background (non-blocking)
     _fetchGPSInBackground(salahRepo, saved);
+  }
+
+  Future<void> _loadLastBookmark() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString('deen360_bookmarks');
+      if (raw != null) {
+        final bookmarks = jsonDecode(raw) as List;
+        if (bookmarks.isNotEmpty && mounted) {
+          setState(() => _lastBookmark = bookmarks.last);
+        }
+      }
+    } catch (_) {}
   }
 
   Future<void> _fetchTimingsAndWeather(double lat, double lng) async {
@@ -264,21 +281,28 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       backgroundColor: AppTheme.background,
       body: FadeTransition(
         opacity: _fadeAnimation,
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 8),
-              _buildZenHUD(),
-              _buildDailyTracker(context),
-              _buildSectionHeader('Community & Share'),
-              _buildShareQuran(context),
-              _buildSectionHeader('Spiritual Insight'),
-              _buildDailyAyah(context),
-              const SizedBox(height: 120),
-            ],
+        child: RefreshIndicator(
+          onRefresh: () async {
+            await _initData();
+          },
+          color: context.read<ThemeProvider>().primaryColor,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+            padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 8),
+                _buildZenHUD(),
+                if (_lastBookmark != null) _buildContinueReading(context),
+                _buildDailyTracker(context),
+                _buildSectionHeader('Community & Share'),
+                _buildShareQuran(context),
+                _buildSectionHeader('Spiritual Insight'),
+                _buildDailyAyah(context),
+                const SizedBox(height: 120),
+              ],
+            ),
           ),
         ),
       ),
@@ -289,6 +313,91 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     return Padding(
       padding: const EdgeInsets.only(left: 30, bottom: 20),
       child: Text(title, style: const TextStyle(color: AppTheme.text, fontSize: 20, fontWeight: FontWeight.w900)),
+    );
+  }
+
+  // ─────────────── CONTINUE READING ───────────────
+  Widget _buildContinueReading(BuildContext context) {
+    final theme = context.watch<ThemeProvider>();
+    final b = _lastBookmark!;
+    final surahName = b['surahName'] ?? 'Surah ${b["surah"]}';
+    final ayah = b['ayah'] ?? 1;
+    final total = b['totalAyahs'] ?? 1;
+    final progress = (ayah / total).clamp(0.0, 1.0);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+      child: GestureDetector(
+        onTap: () => widget.onNavigate('surahContent', {'number': b['surah'], 'ayah': ayah}),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: const Color(0xFFF1F5F9)),
+            boxShadow: AppShadows.dynamicSoft(theme.primaryColor),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(color: theme.primaryColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+                        child: Text('CONTINUE READING', style: TextStyle(color: theme.primaryColor, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                      ),
+                    ],
+                  ),
+                  Icon(Icons.arrow_forward_rounded, size: 16, color: theme.primaryColor.withValues(alpha: 0.5)),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Container(
+                    width: 48, height: 48,
+                    decoration: BoxDecoration(color: theme.primaryColor.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(16)),
+                    child: Center(child: Icon(Icons.menu_book_rounded, size: 20, color: theme.primaryColor)),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(surahName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppTheme.text, letterSpacing: -0.5)),
+                        const SizedBox(height: 2),
+                        Text('Ayah $ayah of $total', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF94A3B8))),
+                      ],
+                    ),
+                  ),
+                  Text('${(progress * 100).toInt()}%', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: theme.primaryColor)),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Stack(
+                children: [
+                  Container(height: 8, width: double.infinity, decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(4))),
+                  FractionallySizedBox(
+                    widthFactor: progress,
+                    child: Container(
+                      height: 8, 
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(colors: [theme.primaryColor, theme.primaryColor.withValues(alpha: 0.8)]), 
+                        borderRadius: BorderRadius.circular(4),
+                        boxShadow: [BoxShadow(color: theme.primaryColor.withValues(alpha: 0.2), blurRadius: 4, offset: const Offset(0, 2))],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

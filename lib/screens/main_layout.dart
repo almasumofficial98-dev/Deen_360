@@ -96,6 +96,7 @@ class _MainLayoutState extends State<MainLayout> {
       case 'surahContent':
         return SurahScreen(
           surahNumber: _params['number'] ?? 1,
+          initialAyah: _params['ayah'],
           onNavigate: _navigate,
         );
       case 'hadiths':
