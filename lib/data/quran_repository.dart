@@ -86,60 +86,80 @@ class QuranRepository {
 
   Future<List<Verse>> fetchAndSaveSurah(int surahNumber, {String language = 'en'}) async {
     try {
-      List<Verse> allVerses = [];
-      int currentPage = 1;
-      int totalPages = 1;
+      final editionMap = {
+        'en': 'en.sahih',
+        'hi': 'hi.hindi',
+        'bn': 'bn.bengali',
+        'ur': 'ur.jalandhry'
+      };
+      final edition = editionMap[language] ?? 'en.sahih';
+      
+      final url = Uri.parse('https://api.alquran.cloud/v1/surah/$surahNumber/editions/quran-uthmani,$edition');
+      final response = await http.get(url).timeout(const Duration(seconds: 15));
 
-      do {
-        final url = Uri.parse(
-            '$_baseUrl/verses/by_chapter/$surahNumber?language=$language&translations=20,131&fields=text_uthmani&per_page=100&page=$currentPage');
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        final data = json['data'] as List?;
         
-        final response = await http.get(url);
+        if (data != null && data.length >= 2) {
+          final arabicAyahs = data[0]['ayahs'] as List?;
+          final translatedAyahs = data[1]['ayahs'] as List?;
 
-        if (response.statusCode == 200) {
-          final json = jsonDecode(response.body);
-          final List<dynamic> versesJson = json['verses'] ?? [];
+          if (arabicAyahs != null && translatedAyahs != null) {
+            List<Verse> allVerses = [];
+            for (int i = 0; i < arabicAyahs.length; i++) {
+              final arAyah = arabicAyahs[i];
+              String arText = arAyah['text'] ?? '';
+              
+              // Remove the Bismillah from beginning of verse 1 for non-Fatiha, as we render Bismillah globally
+              if (surahNumber != 1 && surahNumber != 9 && i == 0) {
+                 arText = arText.replaceFirst(RegExp('^بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ ?'), '');
+                 // some variants use the special characters
+                 arText = arText.replaceFirst('بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ ', '');
+                 // also replacing zero width no break space just in case
+                 if (arText.startsWith('\ufeffبِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ')) {
+                    arText = arText.replaceFirst('\ufeffبِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ', '');
+                 } else if (arText.startsWith('\ufeff')) {
+                    arText = arText.replaceFirst('\ufeff', '');
+                 }
+              }
 
-          final verses = versesJson.map((v) {
-            String translationText = '';
-            if (v['translations'] != null && (v['translations'] as List).isNotEmpty) {
-              translationText = v['translations'][0]['text'] ?? '';
-              translationText = translationText.replaceAll(RegExp(r'<[^>]*>?'), '');
+              final trAyah = (i < translatedAyahs.length) ? translatedAyahs[i] : {};
+              String enText = trAyah['text'] ?? '';
+              
+              allVerses.add(Verse(
+                ayah: '$surahNumber:${arAyah['numberInSurah'] ?? (i + 1)}',
+                ar: arText.trim(),
+                en: enText,
+              ));
             }
 
-            final arabic = v['text_uthmani'] ?? v['text_imlaei_simple'] ?? '';
-            return Verse(
-              ayah: v['verse_key'] ?? '$surahNumber:${v['verse_number']}',
-              ar: arabic as String,
-              en: translationText,
-            );
-          }).toList();
-
-          allVerses.addAll(verses);
-          totalPages = json['pagination']?['total_pages'] ?? 1;
-          currentPage++;
-        } else {
-          throw Exception('Network error');
+            if (allVerses.isNotEmpty) {
+              final jsonList = allVerses.map((v) => v.toJson()).toList();
+              final jsonStr = jsonEncode(jsonList);
+              
+              // Save to file
+              final path = await _getSurahPath(surahNumber, language);
+              await File(path).writeAsString(jsonStr);
+              
+              // Also update legacy cache for safety
+              final cacheKey = 'quran_surah_v2_${surahNumber}_$language';
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setString(cacheKey, jsonStr);
+              
+              return allVerses;
+            }
+          }
         }
-      } while (currentPage <= totalPages);
-
-      if (allVerses.isNotEmpty) {
-        final jsonList = allVerses.map((v) => v.toJson()).toList();
-        final jsonStr = jsonEncode(jsonList);
-        
-        // Save to file
-        final path = await _getSurahPath(surahNumber, language);
-        await File(path).writeAsString(jsonStr);
-        
-        // Also update legacy cache for safety
-        final cacheKey = 'quran_surah_v2_${surahNumber}_$language';
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(cacheKey, jsonStr);
-        
-        return allVerses;
       }
     } catch (e) {
       debugPrint('Failed to fetch surah from network: $e');
+    }
+
+    // Fallback: If network fails or language fetch fails and language wasn't 'en', try fetching 'en' locally or via network
+    if (language != 'en') {
+        debugPrint('Falling back to English for $surahNumber');
+        return loadSurah(surahNumber, language: 'en');
     }
 
     return [];

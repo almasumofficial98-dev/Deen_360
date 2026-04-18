@@ -34,6 +34,7 @@ class _SurahScreenState extends State<SurahScreen> {
   String _surahArabicName = '';
   double _readProgress = 0;
   int? _activeBookmark;
+  String _currentLang = 'en';
   
   final ItemScrollController _itemScrollController = ItemScrollController();
   final ItemPositionsListener _itemPositionsListener = ItemPositionsListener.create();
@@ -89,8 +90,11 @@ class _SurahScreenState extends State<SurahScreen> {
   }
 
   Future<void> _fetchSurah() async {
+    if (mounted && _verses.isNotEmpty) {
+      setState(() => _loading = true);
+    }
     final repo = context.read<QuranRepository>();
-    final verses = await repo.loadSurah(widget.surahNumber);
+    final verses = await repo.loadSurah(widget.surahNumber, language: _currentLang);
     if (mounted) {
       setState(() {
         _verses = verses;
@@ -428,6 +432,7 @@ class _SurahScreenState extends State<SurahScreen> {
                     ],
                   ),
                 ),
+                _buildLanguageSelector(),
                 Container(
                   height: 4, width: double.infinity, color: const Color(0xFFF1F5F9),
                   child: FractionallySizedBox(
@@ -493,6 +498,58 @@ class _SurahScreenState extends State<SurahScreen> {
     );
   }
 
+  Widget _buildLanguageSelector() {
+    final theme = context.watch<ThemeProvider>();
+    final langs = [
+      {'code': 'en', 'label': 'English'},
+      {'code': 'ur', 'label': 'Urdu'},
+      {'code': 'hi', 'label': 'Hindi'},
+      {'code': 'bn', 'label': 'Bengali'},
+    ];
+    
+    return SizedBox(
+      height: 40,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: langs.length,
+        itemBuilder: (context, index) {
+          final lang = langs[index];
+          final isSelected = _currentLang == lang['code'];
+          return GestureDetector(
+            onTap: () {
+              if (!isSelected) {
+                setState(() => _currentLang = lang['code']!);
+                _fetchSurah();
+              }
+            },
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              decoration: BoxDecoration(
+                color: isSelected ? theme.primaryColor : Colors.transparent,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isSelected ? theme.primaryColor : AppTheme.border,
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  lang['label']!,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
+                    color: isSelected ? Colors.white : AppTheme.textMuted,
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildBismillahHero() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
@@ -506,11 +563,11 @@ class _SurahScreenState extends State<SurahScreen> {
         child: Column(
           children: [
             if (_surahArabicName.isNotEmpty)
-              Text(_surahArabicName, style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 16, fontWeight: FontWeight.w800)),
+              Text(_surahArabicName, style: AppTypography.arabic(color: Colors.white.withValues(alpha: 0.5), fontSize: 16, fontWeight: FontWeight.w800)),
             if (_surahArabicName.isNotEmpty) const SizedBox(height: 8),
-            const Text('بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ', style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w800, height: 1.8), textAlign: TextAlign.center),
+            Text('بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ', style: AppTypography.arabic(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w800).copyWith(height: 1.8), textAlign: TextAlign.center),
             Container(width: 40, height: 3, margin: const EdgeInsets.symmetric(vertical: 16), decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2))),
-            Text('Begin in the Name of Allah', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 2)),
+            Text('Begin in the Name of Allah', style: AppTheme.body.copyWith(color: Colors.white.withValues(alpha: 0.8), fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 2)),
           ],
         ),
       ),
@@ -561,9 +618,9 @@ class _SurahScreenState extends State<SurahScreen> {
               ],
             ),
             const SizedBox(height: 20),
-            Text(verse.ar, style: const TextStyle(fontSize: 28, color: AppTheme.text, height: 2, fontWeight: FontWeight.w400), textAlign: TextAlign.right),
+            Text(verse.ar, style: AppTypography.arabic(fontSize: 28, color: AppTheme.text, fontWeight: FontWeight.w400).copyWith(height: 1.8), textAlign: TextAlign.right),
             const SizedBox(height: 20),
-            Text(verse.en, style: const TextStyle(fontSize: 16, color: Color(0xFF334155), height: 1.75, fontWeight: FontWeight.w500)),
+            Text(verse.en, style: AppTypography.getStyleByLang(_currentLang, fontSize: 16, color: const Color(0xFF334155), fontWeight: FontWeight.w500).copyWith(height: 1.75)),
             const SizedBox(height: 32),
             Container(height: 1.5, margin: const EdgeInsets.symmetric(horizontal: 10), color: const Color(0xFFF1F5F9)),
           ],

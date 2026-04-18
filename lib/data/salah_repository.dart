@@ -7,12 +7,14 @@ class LocationData {
   final double longitude;
   final String? city;
   final String? country;
+  final bool isManual;
 
   LocationData({
     required this.latitude,
     required this.longitude,
     this.city,
     this.country,
+    this.isManual = false,
   });
 
   factory LocationData.fromJson(Map<String, dynamic> json) {
@@ -21,6 +23,7 @@ class LocationData {
       longitude: (json['longitude'] as num).toDouble(),
       city: json['city'] as String?,
       country: json['country'] as String?,
+      isManual: json['isManual'] as bool? ?? false,
     );
   }
 
@@ -30,6 +33,7 @@ class LocationData {
       'longitude': longitude,
       'city': city,
       'country': country,
+      'isManual': isManual,
     };
   }
 }

@@ -80,7 +80,7 @@ class DuaListScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Arabic
-            Text(dua.arabic, style: const TextStyle(fontSize: 24, color: AppTheme.text, height: 2), textAlign: TextAlign.right),
+            Text(dua.arabic, style: AppTypography.arabic(fontSize: 24, color: AppTheme.text).copyWith(height: 1.8), textAlign: TextAlign.right),
             const SizedBox(height: 20),
 
             // Transliteration

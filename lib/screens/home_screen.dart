@@ -10,6 +10,7 @@ import '../core/theme_provider.dart';
 import '../data/salah_repository.dart';
 import '../data/salah_tracker_provider.dart';
 import '../widgets/salah_log_sheet.dart';
+import '../widgets/location_search_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(String, [Map<String, dynamic>?]) onNavigate;
@@ -71,22 +72,28 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   //  DATA INIT
   // ─────────────────────────────────────────
 
-  Future<void> _initData() async {
+  Future<void> _initData({bool forceGPS = false}) async {
     final salahRepo = context.read<SalahRepository>();
 
     // Load last bookmark
     _loadLastBookmark();
 
     final saved = await salahRepo.getUserLocation();
-    if (saved != null) {
+    
+    // If we have a saved location and it's not a forced GPS reset, use it
+    if (saved != null && !forceGPS) {
       if (mounted) setState(() => _locationName = saved.city ?? 'Saved');
       _fetchTimingsAndWeather(saved.latitude, saved.longitude);
+      
+      // Still refresh GPS in background if it's not a manual selection
+      if (!saved.isManual) {
+        _fetchGPSInBackground(salahRepo, saved);
+      }
     } else {
-      if (mounted) setState(() => _locationName = 'Makkah');
-      _fetchTimingsAndWeather(21.4225, 39.8262);
+      // Default to GPS or Makkah
+      if (mounted) setState(() => _locationName = 'Locating...');
+      _fetchGPSInBackground(salahRepo, null);
     }
-
-    _fetchGPSInBackground(salahRepo, saved);
   }
 
   Future<void> _loadLastBookmark() async {
@@ -127,25 +134,28 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       final res = await http.get(url).timeout(const Duration(seconds: 8));
       if (res.statusCode == 200 && mounted) {
         final data = jsonDecode(res.body);
-        final cw = data['current_weather'];
+        final cw = data['current_weather'] ?? data['current'];
         if (cw != null) {
-          final temp = (cw['temperature'] as num).round();
-          final code = (cw['weathercode'] as num?)?.toInt() ?? 0;
+          final temp = (cw['temperature'] ?? cw['temperature_2m'] as num).round();
+          final code = (cw['weathercode'] ?? cw['weather_code'] as num?)?.toInt() ?? 0;
           IconData icon = Icons.wb_sunny_rounded;
-          if (code == 0)
+          if (code == 0 || code == 1) {
             icon = Icons.wb_sunny_rounded;
-          else if (code <= 3)
+          } else if (code == 2) {
             icon = Icons.wb_cloudy_rounded;
-          else if (code <= 48)
-            icon = Icons.filter_drama_rounded;
-          else if (code <= 65)
-            icon = Icons.beach_access_rounded;
-          else if (code <= 75)
-            icon = Icons.ac_unit_rounded;
-          else if (code <= 82)
-            icon = Icons.umbrella_rounded;
-          else
+          } else if (code == 3) {
+            icon = Icons.cloud_rounded;
+          } else if (code <= 48) {
+            icon = Icons.blur_on_rounded; // Fog
+          } else if (code <= 55) {
+            icon = Icons.grain_rounded; // Drizzle
+          } else if (code <= 67 || (code >= 80 && code <= 82)) {
+            icon = Icons.beach_access_rounded; // Rain
+          } else if (code <= 77 || (code >= 85 && code <= 86)) {
+            icon = Icons.ac_unit_rounded; // Snow
+          } else if (code >= 95) {
             icon = Icons.thunderstorm_rounded;
+          }
 
           setState(() {
             _temperature = temp;
@@ -161,6 +171,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     LocationData? saved,
   ) async {
     try {
+      if (saved != null && saved.isManual) return;
       if (!await Geolocator.isLocationServiceEnabled()) return;
 
       var perm = await Geolocator.checkPermission();
@@ -609,22 +620,46 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  // ─────────────── ZEN HUD ───────────────
+  void _showLocationSearch() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => LocationSearchSheet(
+        primaryColor: context.watch<ThemeProvider>().primaryColor,
+        onLocationSelected: (data) => _updateLocation(data),
+        onResetToGPS: () => _initData(forceGPS: true),
+      ),
+    );
+  }
+
+  Future<void> _updateLocation(LocationData data) async {
+    if (!mounted) return;
+    setState(() => _locationName = data.city ?? 'Saved');
+    await context.read<SalahRepository>().saveUserLocation(data);
+    _fetchTimingsAndWeather(data.latitude, data.longitude);
+  }
+
+  // ─────────────── ZEN HUD ──────────────s─
   LinearGradient _getHUDGradient() {
-    switch (_currentPrayerName) {
+    switch (_currentPrayerName.toUpperCase()) {
       case 'FAJR':
+        return AppGradients.fajr;
       case 'SUNRISE':
-        return AppGradients.dawn;
+        return AppGradients.sunrise;
       case 'DHUHR':
+        return AppGradients.dhuhr;
       case 'ASR':
-        return AppGradients.primary;
+        return AppGradients.asr;
       case 'MAGHRIB':
-        return AppGradients.sunset;
+        return AppGradients.maghrib;
       case 'ISHA':
+        return AppGradients.isha;
       case 'MIDNIGHT':
+        return AppGradients.midnight;
       case 'TAHAJJUD':
       case 'TAHAJJUD_VIGIL':
-        return AppGradients.night;
+        return AppGradients.tahajjud;
       default:
         return AppGradients.primary;
     }
@@ -632,6 +667,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Widget _buildZenHUD() {
     final gradient = _getHUDGradient();
+    final isLight = AppGradients.isLightText(_currentPrayerName);
+    final foregroundColor = isLight ? Colors.white : AppTheme.text;
+    final mutedForegroundColor = isLight
+        ? Colors.white.withValues(alpha: 0.75)
+        : AppTheme.textMuted;
+    final secondaryBgColor = isLight
+        ? Colors.white.withValues(alpha: 0.2)
+        : AppTheme.text.withValues(alpha: 0.08);
 
     return GestureDetector(
       onTap: () => widget.onNavigate('salah'),
@@ -641,9 +684,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         decoration: BoxDecoration(
           gradient: gradient,
           borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+          border: Border.all(color: foregroundColor.withValues(alpha: 0.15)),
           boxShadow: AppShadows.dynamicFloating(
-            context.watch<ThemeProvider>().primaryColor,
+            isLight
+                ? context.watch<ThemeProvider>().primaryColor
+                : Colors.black,
           ),
         ),
         child: Column(
@@ -652,57 +697,73 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Flexible(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.1),
+                  child: GestureDetector(
+                    onTap: _showLocationSearch,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
                       ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.location_on_rounded,
-                          size: 14,
-                          color: Colors.white,
+                      decoration: BoxDecoration(
+                        color: secondaryBgColor,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: foregroundColor.withValues(alpha: 0.1),
                         ),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            _locationName,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 0.5,
-                            ),
-                            overflow: TextOverflow.ellipsis,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.location_on_rounded,
+                            size: 14,
+                            color: foregroundColor,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              _locationName,
+                              style: TextStyle(
+                                color: foregroundColor,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.5,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
-                Row(
-                  children: [
-                    Icon(_weatherIcon, size: 16, color: Colors.white),
-                    const SizedBox(width: 6),
-                    Text(
-                      '${_temperature != null ? "$_temperature°C" : "--°C"}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                      ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: secondaryBgColor,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: foregroundColor.withValues(alpha: 0.1),
                     ),
-                  ],
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(_weatherIcon, size: 14, color: foregroundColor),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${_temperature != null ? "$_temperature°C" : "--°C"}',
+                        style: TextStyle(
+                          color: foregroundColor,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -719,8 +780,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           _currentPrayerName,
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: foregroundColor,
                             fontSize: 48,
                             fontWeight: FontWeight.w900,
                             letterSpacing: -1,
@@ -734,7 +795,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             ? _currentPrayerLabel
                             : 'Current Period',
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.75),
+                          color: mutedForegroundColor,
                           fontSize: 12,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 0.5,
@@ -753,8 +814,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         fit: BoxFit.scaleDown,
                         child: Text(
                           _timeRemaining,
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: foregroundColor,
                             fontSize: 30,
                             fontWeight: FontWeight.w900,
                             letterSpacing: -0.5,
@@ -765,7 +826,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       Text(
                         'Until $_nextPrayerName',
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.8),
+                          color: mutedForegroundColor,
                           fontSize: 12,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 0.5,
@@ -777,23 +838,41 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ],
             ),
             const SizedBox(height: 24),
-            Container(height: 1, color: Colors.white.withValues(alpha: 0.15)),
+            Container(
+              height: 1,
+              color: foregroundColor.withValues(alpha: 0.15),
+            ),
             const SizedBox(height: 20),
             Row(
               children: [
-                _buildStatItem('Started', _currentStart),
+                _buildStatItem(
+                  'Started',
+                  _currentStart,
+                  foregroundColor,
+                  mutedForegroundColor,
+                ),
                 Container(
                   width: 1,
                   height: 30,
-                  color: Colors.white.withValues(alpha: 0.15),
+                  color: foregroundColor.withValues(alpha: 0.15),
                 ),
-                _buildStatItem('Ending', _currentEnd),
+                _buildStatItem(
+                  'Ending',
+                  _currentEnd,
+                  foregroundColor,
+                  mutedForegroundColor,
+                ),
                 Container(
                   width: 1,
                   height: 30,
-                  color: Colors.white.withValues(alpha: 0.15),
+                  color: foregroundColor.withValues(alpha: 0.15),
                 ),
-                _buildStatItem('$_nextPrayerName at', _nextTime),
+                _buildStatItem(
+                  '$_nextPrayerName at',
+                  _nextTime,
+                  foregroundColor,
+                  mutedForegroundColor,
+                ),
               ],
             ),
           ],
@@ -802,7 +881,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildStatItem(String label, String value) {
+  Widget _buildStatItem(
+    String label,
+    String value,
+    Color foreground,
+    Color mutedForeground,
+  ) {
     return Expanded(
       child: Column(
         children: [
@@ -811,7 +895,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.6),
+              color: mutedForeground,
               fontSize: 11,
               fontWeight: FontWeight.w800,
             ),
@@ -821,8 +905,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             value,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: foreground,
               fontSize: 14,
               fontWeight: FontWeight.w900,
             ),

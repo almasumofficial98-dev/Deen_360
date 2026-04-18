@@ -41,6 +41,7 @@ class _SalahCalendarScreenState extends State<SalahCalendarScreen> {
             Expanded(
               child: ListView(
                 physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.only(bottom: 120),
                 children: [
                   _buildCalendar(tracker, primaryColor),
                   _buildDayDetails(tracker, primaryColor),

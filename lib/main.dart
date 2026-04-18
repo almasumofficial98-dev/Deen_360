@@ -54,7 +54,7 @@ class MyApp extends StatelessWidget {
               seedColor: theme.primaryColor,
               primary: theme.primaryColor,
             ),
-            fontFamily: 'Inter',
+            fontFamily: AppTypography.primaryFont,
           ),
           home: const MainLayout(),
         );

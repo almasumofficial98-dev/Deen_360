@@ -97,7 +97,7 @@ class _HadithListScreenState extends State<HadithListScreen> {
 
           // Arabic
           if (h.ar.isNotEmpty)
-            Text(h.ar, style: const TextStyle(fontSize: 22, color: AppTheme.text, height: 2), textAlign: TextAlign.right),
+            Text(h.ar, style: AppTypography.arabic(fontSize: 22, color: AppTheme.text).copyWith(height: 1.8), textAlign: TextAlign.right),
           if (h.ar.isNotEmpty) const SizedBox(height: 16),
 
           // English

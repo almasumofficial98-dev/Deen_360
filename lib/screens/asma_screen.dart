@@ -136,17 +136,17 @@ class _AsmaScreenState extends State<AsmaScreen> {
           const Spacer(),
           FittedBox(
             fit: BoxFit.scaleDown,
-            child: Text(name.name, style: const TextStyle(fontSize: 28, color: AppTheme.text, fontWeight: FontWeight.w600, height: 1.4)),
+            child: Text(name.name, style: AppTypography.arabic(fontSize: 28, color: AppTheme.text, fontWeight: FontWeight.w600).copyWith(height: 1.4)),
           ),
           const SizedBox(height: 8),
           FittedBox(
             fit: BoxFit.scaleDown,
-            child: Text(name.transliteration, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: AppTheme.text)),
+            child: Text(name.transliteration, style: AppTheme.body.copyWith(fontWeight: FontWeight.w900, color: AppTheme.text, fontSize: 15)),
           ),
           const SizedBox(height: 2),
           FittedBox(
             fit: BoxFit.scaleDown,
-            child: Text(name.meaning, maxLines: 1, style: const TextStyle(fontSize: 10, color: AppTheme.textLight, fontWeight: FontWeight.w700)),
+            child: Text(name.meaning, maxLines: 1, style: AppTheme.small.copyWith(color: AppTheme.textLight, fontWeight: FontWeight.w700, fontSize: 10)),
           ),
           const Spacer(),
         ],

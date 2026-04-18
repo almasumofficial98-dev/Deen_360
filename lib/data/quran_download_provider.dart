@@ -54,8 +54,10 @@ class QuranDownloadProvider extends ChangeNotifier {
         _currentStatus = 'Downloading Surah $i...';
         notifyListeners();
 
-        // Download and save
-        await _repository.fetchAndSaveSurah(i);
+        // Download and save all translations
+        for (final lang in ['en', 'hi', 'bn', 'ur']) {
+          await _repository.fetchAndSaveSurah(i, language: lang);
+        }
         
         _offlineSurahs.add(i);
         _downloadedCount = _offlineSurahs.length;
