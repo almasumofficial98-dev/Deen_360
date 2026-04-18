@@ -297,8 +297,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 if (_lastBookmark != null) _buildContinueReading(context),
                 _buildDailyTracker(context),
                 _buildPostStudioCard(context),
-                _buildSectionHeader('Spiritual Insight'),
-                _buildDailyAyah(context),
                 const SizedBox(height: 120),
               ],
             ),
