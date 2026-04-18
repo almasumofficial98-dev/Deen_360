@@ -8,6 +8,7 @@ import 'data/salah_repository.dart';
 import 'data/hadith_repository.dart';
 import 'data/asma_repository.dart';
 import 'data/salah_tracker_provider.dart';
+import 'data/quran_download_provider.dart';
 import 'screens/main_layout.dart';
 
 void main() async {
@@ -22,6 +23,10 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => SalahTrackerProvider()),
         Provider<QuranRepository>(create: (_) => QuranRepository()),
+        ChangeNotifierProxyProvider<QuranRepository, QuranDownloadProvider>(
+          create: (ctx) => QuranDownloadProvider(ctx.read<QuranRepository>()),
+          update: (_, repo, prev) => prev ?? QuranDownloadProvider(repo),
+        ),
         Provider<DuaRepository>(create: (_) => duaRepo),
         Provider<SalahRepository>(create: (_) => SalahRepository()),
         Provider<HadithRepository>(create: (_) => HadithRepository()),

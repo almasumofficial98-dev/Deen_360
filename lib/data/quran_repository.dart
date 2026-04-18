@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart';
 
 class Verse {
   final String ayah;
@@ -34,22 +36,55 @@ class Verse {
 class QuranRepository {
   static const String _baseUrl = 'https://api.quran.com/api/v4';
 
+  Future<String> _getSurahPath(int surahNumber, String language) async {
+    final dir = await getApplicationDocumentsDirectory();
+    final quranDir = Directory('${dir.path}/quran_offline');
+    if (!await quranDir.exists()) {
+      await quranDir.create(recursive: true);
+    }
+    return '${quranDir.path}/surah_${surahNumber}_$language.json';
+  }
+
+  Future<bool> isSurahDownloaded(int surahNumber, {String language = 'en'}) async {
+    final path = await _getSurahPath(surahNumber, language);
+    return File(path).exists();
+  }
+
   Future<List<Verse>> loadSurah(int surahNumber, {String language = 'en'}) async {
+    // 1. Try to load from local file (Offline First)
+    try {
+      final path = await _getSurahPath(surahNumber, language);
+      final file = File(path);
+      if (await file.exists()) {
+        final content = await file.readAsString();
+        final List<dynamic> jsonList = jsonDecode(content);
+        return jsonList.map((e) => Verse.fromJson(e)).toList();
+      }
+    } catch (e) {
+      debugPrint('Error loading surah from file: $e');
+    }
+
+    // 2. Try to load from legacy SharedPreferences cache
     final cacheKey = 'quran_surah_v2_${surahNumber}_$language';
     final prefs = await SharedPreferences.getInstance();
-
-    // 1. Try to load from cache
     try {
       final cached = prefs.getString(cacheKey);
       if (cached != null) {
         final List<dynamic> jsonList = jsonDecode(cached);
+        // Save to file for future use
+        final path = await _getSurahPath(surahNumber, language);
+        await File(path).writeAsString(cached);
         return jsonList.map((e) => Verse.fromJson(e)).toList();
       }
     } catch (e) {
-      // Ignore cache error and proceed to network
+      // Ignore cache error
     }
 
-    // 2. Fetch from network
+    // 3. Fetch from network
+    return fetchAndSaveSurah(surahNumber, language: language);
+  }
+
+  Future<List<Verse>> fetchAndSaveSurah(int surahNumber, {String language = 'en'}) async {
     try {
       List<Verse> allVerses = [];
       int currentPage = 1;
@@ -69,7 +104,6 @@ class QuranRepository {
             String translationText = '';
             if (v['translations'] != null && (v['translations'] as List).isNotEmpty) {
               translationText = v['translations'][0]['text'] ?? '';
-              // Remove HTML tags
               translationText = translationText.replaceAll(RegExp(r'<[^>]*>?'), '');
             }
 
@@ -91,42 +125,36 @@ class QuranRepository {
 
       if (allVerses.isNotEmpty) {
         final jsonList = allVerses.map((v) => v.toJson()).toList();
-        await prefs.setString(cacheKey, jsonEncode(jsonList));
+        final jsonStr = jsonEncode(jsonList);
+        
+        // Save to file
+        final path = await _getSurahPath(surahNumber, language);
+        await File(path).writeAsString(jsonStr);
+        
+        // Also update legacy cache for safety
+        final cacheKey = 'quran_surah_v2_${surahNumber}_$language';
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(cacheKey, jsonStr);
+        
         return allVerses;
       }
     } catch (e) {
       debugPrint('Failed to fetch surah from network: $e');
-      // Fall through to fallback
     }
 
-    // 3. Offline fallback
-    final fallback = {
-      1: [
-        Verse(
-          ayah: '1:1',
-          ar: 'بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ',
-          en: 'In the name of Allah, the Most Gracious, the Most Merciful.',
-        ),
-        Verse(
-          ayah: '1:2',
-          ar: 'الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ',
-          en: 'All praise is due to Allah, Lord of all the worlds.',
-        ),
-      ],
-    };
-
-    final list = fallback[surahNumber] ?? [];
-    try {
-      final jsonList = list.map((v) => v.toJson()).toList();
-      await prefs.setString(cacheKey, jsonEncode(jsonList));
-    } catch (e) {
-      // Ignore
-    }
-    return list;
+    return [];
   }
 
   Future<void> clearQuranCache() async {
     try {
+      // Clear files
+      final dir = await getApplicationDocumentsDirectory();
+      final quranDir = Directory('${dir.path}/quran_offline');
+      if (await quranDir.exists()) {
+        await quranDir.delete(recursive: true);
+      }
+
+      // Clear prefs
       final prefs = await SharedPreferences.getInstance();
       final keys = prefs.getKeys();
       for (final key in keys) {
@@ -139,4 +167,3 @@ class QuranRepository {
     }
   }
 }
-
