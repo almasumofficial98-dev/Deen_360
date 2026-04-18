@@ -465,6 +465,30 @@ class _PostStudioScreenState extends State<PostStudioScreen> {
                             ),
                           ),
                           const SizedBox(height: 60),
+                          Opacity(
+                            opacity: 0.6,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: const Text(
+                                'DEEN 360',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 10,
+                                  letterSpacing: 2,
+                                ),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
