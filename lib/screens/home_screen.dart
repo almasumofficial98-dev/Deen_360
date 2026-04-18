@@ -296,8 +296,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 _buildZenHUD(),
                 if (_lastBookmark != null) _buildContinueReading(context),
                 _buildDailyTracker(context),
-                _buildSectionHeader('Community & Share'),
-                _buildShareQuran(context),
+                _buildPostStudioCard(context),
                 _buildSectionHeader('Spiritual Insight'),
                 _buildDailyAyah(context),
                 const SizedBox(height: 120),
@@ -623,69 +622,58 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  // ─────────────── SHARE QURAN ───────────────
-  Widget _buildShareQuran(BuildContext context) {
+  // ─────────────── POST STUDIO ───────────────
+  Widget _buildPostStudioCard(BuildContext context) {
     final theme = context.watch<ThemeProvider>();
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: const Color(0xFFF1F5F9)),
-          boxShadow: AppShadows.dynamicSoft(theme.primaryColor),
-        ),
-        child: Column(
-          children: [
-            Row(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+      child: GestureDetector(
+        onTap: () => widget.onNavigate('postStudio'),
+        child: Container(
+          height: 180,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(32),
+            image: const DecorationImage(
+              image: NetworkImage('https://loremflickr.com/800/400/nature,mountain'),
+              fit: BoxFit.cover,
+            ),
+            boxShadow: AppShadows.dynamicSoft(theme.primaryColor),
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(32),
+              gradient: LinearGradient(
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+                colors: [
+                  Colors.black.withValues(alpha: 0.8),
+                  Colors.black.withValues(alpha: 0.2),
+                ],
+              ),
+            ),
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Container(
-                  width: 54, height: 54,
-                  decoration: BoxDecoration(color: theme.primaryColor.withValues(alpha: 0.1), shape: BoxShape.circle),
-                  child: Icon(Icons.share_rounded, color: theme.primaryColor, size: 24),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(8)),
+                      child: const Text('POST STUDIO', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+                    ),
+                    const Spacer(),
+                    const Icon(Icons.palette_rounded, color: Colors.white, size: 20),
+                  ],
                 ),
-                const SizedBox(width: 20),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Share the Light', style: TextStyle(color: AppTheme.text, fontSize: 18, fontWeight: FontWeight.w900)),
-                      SizedBox(height: 2),
-                      Text('Send Quranic Ayahs to loved ones', style: TextStyle(color: AppTheme.textLight, fontSize: 13, fontWeight: FontWeight.w600)),
-                    ],
-                  ),
-                ),
+                const SizedBox(height: 12),
+                const Text('Spiritual Creator', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+                const SizedBox(height: 4),
+                Text('Design beautiful nature-themed posts with Ayahs and Hadiths.', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13, fontWeight: FontWeight.w600)),
               ],
             ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(child: _buildShareOption(context, 'Daily Ayah', Icons.auto_stories_rounded, () => widget.onNavigate('surahList'))),
-                const SizedBox(width: 12),
-                Expanded(child: _buildShareOption(context, 'Noble Quran', Icons.menu_book_rounded, () => widget.onNavigate('surahList'))),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildShareOption(BuildContext context, String label, IconData icon, VoidCallback onTap) {
-    final primaryColor = context.watch<ThemeProvider>().primaryColor;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(color: AppTheme.inputBg, borderRadius: BorderRadius.circular(16)),
-        child: Column(
-          children: [
-            Icon(icon, size: 20, color: primaryColor),
-            const SizedBox(height: 6),
-            Text(label, style: TextStyle(color: primaryColor, fontSize: 11, fontWeight: FontWeight.w800)),
-          ],
+          ),
         ),
       ),
     );

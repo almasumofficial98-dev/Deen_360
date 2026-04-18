@@ -22,6 +22,7 @@ import 'more_hub_screen.dart';
 import 'profile_screen.dart';
 import 'salah_calendar_screen.dart';
 import 'salah_guide_screen.dart';
+import 'post_studio_screen.dart';
 
 class _NavigationPoint {
   final String target;
@@ -134,6 +135,12 @@ class _MainLayoutState extends State<MainLayout> {
         return SalahCalendarScreen(onNavigate: _navigate);
       case 'salahGuide':
         return SalahGuideScreen(onNavigate: _navigate);
+      case 'postStudio':
+        return PostStudioScreen(
+          onNavigate: _navigate,
+          initialText: _params['text'],
+          initialSource: _params['source'],
+        );
       default:
         return HomeScreen(onNavigate: _navigate);
     }
