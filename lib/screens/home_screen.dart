@@ -668,7 +668,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ],
                 ),
                 const SizedBox(height: 12),
-                const Text('Spiritual Creator', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+                const Text('Post Ayah & Hadith', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
                 const SizedBox(height: 4),
                 Text('Design beautiful nature-themed posts with Ayahs and Hadiths.', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13, fontWeight: FontWeight.w600)),
               ],

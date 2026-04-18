@@ -147,9 +147,7 @@ class _PostStudioScreenState extends State<PostStudioScreen> {
         ).create();
         await file.writeAsBytes(pngBytes);
         if (!mounted) return;
-        await Share.shareXFiles([
-          XFile(file.path),
-        ]);
+        await Share.shareXFiles([XFile(file.path)]);
       }
     } catch (e) {
       ScaffoldMessenger.of(
