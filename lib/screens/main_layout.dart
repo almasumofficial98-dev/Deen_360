@@ -57,6 +57,16 @@ class _MainLayoutState extends State<MainLayout> {
   }
 
   bool _pop() {
+    // If we are in Post Studio, always go straight home as requested
+    if (_activeTab == 'postStudio') {
+      setState(() {
+        _history.clear();
+        _activeTab = 'home';
+        _params = {};
+      });
+      return false;
+    }
+
     if (_history.isNotEmpty) {
       setState(() {
         final prev = _history.removeLast();
@@ -198,8 +208,9 @@ class _MainLayoutState extends State<MainLayout> {
             ),
 
             // Floating Bottom Navigation
-            Positioned(
-              bottom: 30,
+            if (_activeTab != 'postStudio')
+              Positioned(
+                bottom: 30,
               left: 0,
               right: 0,
               child: Center(
