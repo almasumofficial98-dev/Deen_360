@@ -77,6 +77,24 @@ class AppShadows {
       spreadRadius: 8,
     ),
   ];
+
+  static List<BoxShadow> dynamicSoft(Color color) => [
+    BoxShadow(
+      color: color.withValues(alpha: 0.12),
+      offset: const Offset(0, 4),
+      blurRadius: 15,
+      spreadRadius: 2,
+    ),
+  ];
+
+  static List<BoxShadow> dynamicFloating(Color color) => [
+    BoxShadow(
+      color: color.withValues(alpha: 0.25),
+      offset: const Offset(0, 8),
+      blurRadius: 24,
+      spreadRadius: 4,
+    ),
+  ];
 }
 
 class AppGradients {

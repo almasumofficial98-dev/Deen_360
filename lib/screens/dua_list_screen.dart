@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/theme.dart';
+import '../core/theme_provider.dart';
 import '../data/dua_repository.dart';
 
 class DuaListScreen extends StatelessWidget {
@@ -26,7 +27,7 @@ class DuaListScreen extends StatelessWidget {
                   GestureDetector(
                     onTap: () => onNavigate('duaCategories'),
                     child: Container(width: 44, height: 44, decoration: BoxDecoration(color: AppTheme.inputBg, borderRadius: BorderRadius.circular(14)),
-                      child: const Center(child: Text('←', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)))),
+                      child: const Center(child: Icon(Icons.arrow_back_rounded, size: 20, color: AppTheme.text))),
                   ),
                   Expanded(child: Text(subCat?.title ?? 'Duas', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppTheme.text), textAlign: TextAlign.center)),
                   const SizedBox(width: 44),
@@ -42,7 +43,7 @@ class DuaListScreen extends StatelessWidget {
                         Container(
                           width: 80, height: 80,
                           decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(40)),
-                          child: const Center(child: Text('🤲', style: TextStyle(fontSize: 36))),
+                          child:  Center(child: Icon(Icons.pan_tool_alt_rounded, size: 36, color: context.watch<ThemeProvider>().primaryColor.withValues(alpha: 0.5))),
                         ),
                         const SizedBox(height: 20),
                         const Text('No Duas Yet', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AppTheme.text)),
@@ -55,7 +56,7 @@ class DuaListScreen extends StatelessWidget {
                     physics: const BouncingScrollPhysics(),
                     padding: const EdgeInsets.only(bottom: 120),
                     itemCount: duas.length,
-                    itemBuilder: (ctx, i) => _buildDuaCard(duas[i], i),
+                    itemBuilder: (ctx, i) => _buildDuaCard(ctx, duas[i], i),
                   ),
             ),
           ],
@@ -64,7 +65,7 @@ class DuaListScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDuaCard(Dua dua, int index) {
+  Widget _buildDuaCard(BuildContext context, Dua dua, int index) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
       child: Container(
@@ -73,7 +74,7 @@ class DuaListScreen extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
           border: Border.all(color: const Color(0xFFF1F5F9)),
-          boxShadow: AppShadows.soft,
+          boxShadow: AppShadows.dynamicSoft(context.watch<ThemeProvider>().primaryColor),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -83,7 +84,7 @@ class DuaListScreen extends StatelessWidget {
             const SizedBox(height: 20),
 
             // Transliteration
-            Text(dua.transliteration, style: const TextStyle(fontSize: 14, color: AppTheme.primary, fontWeight: FontWeight.w700, fontStyle: FontStyle.italic)),
+            Text(dua.transliteration, style: TextStyle(fontSize: 14, color: context.watch<ThemeProvider>().primaryColor, fontWeight: FontWeight.w700, fontStyle: FontStyle.italic)),
             const SizedBox(height: 12),
 
             // Translation
@@ -94,8 +95,8 @@ class DuaListScreen extends StatelessWidget {
             if (dua.reference.isNotEmpty)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(color: AppTheme.primary.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
-                child: Text(dua.reference, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: AppTheme.primary)),
+                decoration: BoxDecoration(color: context.watch<ThemeProvider>().primaryColor.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
+                child: Text(dua.reference, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: context.watch<ThemeProvider>().primaryColor)),
               ),
           ],
         ),

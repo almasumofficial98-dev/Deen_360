@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/theme.dart';
+import '../core/theme_provider.dart';
 
 class BookmarksScreen extends StatefulWidget {
   final Function(String, [Map<String, dynamic>?]) onNavigate;
@@ -67,7 +69,7 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                   GestureDetector(
                     onTap: () => widget.onNavigate('home'),
                     child: Container(width: 44, height: 44, decoration: BoxDecoration(color: AppTheme.inputBg, borderRadius: BorderRadius.circular(14)),
-                      child: const Center(child: Text('←', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)))),
+                      child: const Center(child: Icon(Icons.arrow_back_rounded, size: 20, color: AppTheme.text))),
                   ),
                   const Text('Saved Vault', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppTheme.text, letterSpacing: -0.5)),
                   const SizedBox(width: 44),
@@ -88,17 +90,17 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                       curve: Curves.easeOut,
                       bottom: 0,
                       left: _activeTab == 'quran' ? 0 : (screenWidth - 40) / 2,
-                      child: Container(width: (screenWidth - 40) / 2, height: 3, decoration: BoxDecoration(color: AppTheme.primary, borderRadius: BorderRadius.circular(3))),
+                      child: Container(width: (screenWidth - 40) / 2, height: 3, decoration: BoxDecoration(color: context.watch<ThemeProvider>().primaryColor, borderRadius: BorderRadius.circular(3))),
                     ),
                     Row(
                       children: [
                         Expanded(child: GestureDetector(
                           onTap: () => setState(() => _activeTab = 'quran'),
-                          child: Center(child: Text('Quran', style: TextStyle(fontSize: 15, fontWeight: _activeTab == 'quran' ? FontWeight.w900 : FontWeight.w700, color: _activeTab == 'quran' ? AppTheme.primary : const Color(0xFF94A3B8)))),
+                          child: Center(child: Text('Quran', style: TextStyle(fontSize: 15, fontWeight: _activeTab == 'quran' ? FontWeight.w900 : FontWeight.w700, color: _activeTab == 'quran' ? context.watch<ThemeProvider>().primaryColor : const Color(0xFF94A3B8)))),
                         )),
                         Expanded(child: GestureDetector(
                           onTap: () => setState(() => _activeTab = 'hadith'),
-                          child: Center(child: Text('Hadith', style: TextStyle(fontSize: 15, fontWeight: _activeTab == 'hadith' ? FontWeight.w900 : FontWeight.w700, color: _activeTab == 'hadith' ? AppTheme.primary : const Color(0xFF94A3B8)))),
+                          child: Center(child: Text('Hadith', style: TextStyle(fontSize: 15, fontWeight: _activeTab == 'hadith' ? FontWeight.w900 : FontWeight.w700, color: _activeTab == 'hadith' ? context.watch<ThemeProvider>().primaryColor : const Color(0xFF94A3B8)))),
                         )),
                       ],
                     ),
@@ -113,7 +115,7 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                 ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
                     const CircularProgressIndicator(color: AppTheme.primary),
                     const SizedBox(height: 16),
-                    const Text('Opening Vault...', style: TextStyle(fontWeight: FontWeight.w700, color: AppTheme.primary)),
+                    Text('Opening Vault...', style: TextStyle(fontWeight: FontWeight.w700, color: context.watch<ThemeProvider>().primaryColor)),
                   ]))
                 : _currentData.isEmpty
                   ? _buildEmptyState()
@@ -140,7 +142,7 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
             Container(
               width: 100, height: 100,
               decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(50)),
-              child: Center(child: Text(_activeTab == 'quran' ? '📖' : '📚', style: const TextStyle(fontSize: 48))),
+              child: Center(child: Icon(_activeTab == 'quran' ? Icons.menu_book_rounded : Icons.collections_bookmark_rounded, size: 48, color: context.watch<ThemeProvider>().primaryColor.withValues(alpha: 0.5))),
             ),
             const SizedBox(height: 24),
             const Text('Nothing Here Yet', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppTheme.text)),
@@ -155,7 +157,7 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
               onTap: () => widget.onNavigate(_activeTab == 'quran' ? 'surahList' : 'hadiths'),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                decoration: BoxDecoration(color: AppTheme.primary, borderRadius: BorderRadius.circular(100), boxShadow: AppShadows.floating),
+                decoration: BoxDecoration(color: context.watch<ThemeProvider>().primaryColor, borderRadius: BorderRadius.circular(100), boxShadow: AppShadows.dynamicFloating(context.watch<ThemeProvider>().primaryColor)),
                 child: const Text('Go Explore', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15)),
               ),
             ),
@@ -188,8 +190,8 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                 children: [
                   Container(
                     width: 52, height: 52,
-                    decoration: BoxDecoration(color: AppTheme.primary.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(16)),
-                    child: Center(child: Text(isQuran ? '📖' : '📜', style: const TextStyle(fontSize: 22))),
+                    decoration: BoxDecoration(color: context.watch<ThemeProvider>().primaryColor.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(16)),
+                    child: Center(child: Icon(isQuran ? Icons.menu_book_rounded : Icons.description_rounded, size: 22, color: context.watch<ThemeProvider>().primaryColor)),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -200,7 +202,7 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                           style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: AppTheme.text, letterSpacing: -0.5), maxLines: 1, overflow: TextOverflow.ellipsis),
                         const SizedBox(height: 3),
                         Text(isQuran ? 'Ayah ${item["ayah"]}' : 'Hadith ${item["id"]}',
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppTheme.primary)),
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: context.watch<ThemeProvider>().primaryColor)),
                       ],
                     ),
                   ),
@@ -214,7 +216,7 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                         child: Container(
                           width: 28, height: 28,
                           decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(14)),
-                          child: const Center(child: Text('×', style: TextStyle(color: AppTheme.error, fontSize: 18, fontWeight: FontWeight.w700))),
+                          child: const Center(child: Icon(Icons.close_rounded, color: AppTheme.error, size: 18)),
                         ),
                       ),
                     ],

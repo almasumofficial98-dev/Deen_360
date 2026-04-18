@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/theme.dart';
+import '../core/theme_provider.dart';
 import '../data/hadith_repository.dart';
 
 class HadithChaptersScreen extends StatefulWidget {
@@ -54,7 +55,7 @@ class _HadithChaptersScreenState extends State<HadithChaptersScreen> {
             ),
             Expanded(
               child: _loading
-                ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
+                ? Center(child: CircularProgressIndicator(color: context.watch<ThemeProvider>().primaryColor))
                 : ListView.builder(
                     physics: const BouncingScrollPhysics(),
                     padding: const EdgeInsets.only(bottom: 120),
@@ -73,8 +74,8 @@ class _HadithChaptersScreenState extends State<HadithChaptersScreen> {
                                   children: [
                                     Container(
                                       width: 44, height: 44,
-                                      decoration: BoxDecoration(color: AppTheme.primary.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(12)),
-                                      child: Center(child: Text(ch.id, style: const TextStyle(color: AppTheme.primary, fontWeight: FontWeight.w900, fontSize: 13))),
+                                      decoration: BoxDecoration(color: context.watch<ThemeProvider>().primaryColor.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(12)),
+                                      child: Center(child: Text(ch.id, style: TextStyle(color: context.watch<ThemeProvider>().primaryColor, fontWeight: FontWeight.w900, fontSize: 13))),
                                     ),
                                     const SizedBox(width: 16),
                                     Expanded(child: Text(ch.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.text))),

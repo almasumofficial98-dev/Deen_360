@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/theme.dart';
+import '../core/theme_provider.dart';
 import '../data/hadith_repository.dart';
 
 class HadithListScreen extends StatefulWidget {
@@ -53,7 +54,7 @@ class _HadithListScreenState extends State<HadithListScreen> {
             ),
             Expanded(
               child: _loading
-                ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
+                ? Center(child: CircularProgressIndicator(color: context.watch<ThemeProvider>().primaryColor))
                 : _hadiths.isEmpty
                   ? const Center(child: Text('No Hadiths found', style: TextStyle(color: AppTheme.textLight, fontSize: 16)))
                   : ListView.builder(
@@ -80,15 +81,15 @@ class _HadithListScreenState extends State<HadithListScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(color: AppTheme.primary.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
-                child: Text('#${h.id}', style: const TextStyle(color: AppTheme.primary, fontWeight: FontWeight.w900, fontSize: 13)),
+                decoration: BoxDecoration(color: context.watch<ThemeProvider>().primaryColor.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
+                child: Text('#${h.id}', style: TextStyle(color: context.watch<ThemeProvider>().primaryColor, fontWeight: FontWeight.w900, fontSize: 13)),
               ),
               const Spacer(),
               if (h.grades.isNotEmpty)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: AppTheme.primary.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(6)),
-                  child: Text(h.grades[0]['grade'] ?? '', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppTheme.primary)),
+                  decoration: BoxDecoration(color: context.watch<ThemeProvider>().primaryColor.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(6)),
+                  child: Text(h.grades[0]['grade'] ?? '', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: context.watch<ThemeProvider>().primaryColor)),
                 ),
             ],
           ),

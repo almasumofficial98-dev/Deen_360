@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/theme.dart';
+import '../core/theme_provider.dart';
 import '../data/hadith_repository.dart';
 
 class HadithCollectionsScreen extends StatefulWidget {
@@ -65,15 +66,9 @@ class _HadithCollectionsScreenState extends State<HadithCollectionsScreen> {
                     color: AppTheme.inputBg,
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: const Center(
-                    child: Text(
-                      '←',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                      ),
+                    child: const Center(
+                      child: Icon(Icons.arrow_back_rounded, size: 20, color: AppTheme.text),
                     ),
-                  ),
                 ),
               ),
               const Text(
@@ -93,7 +88,7 @@ class _HadithCollectionsScreenState extends State<HadithCollectionsScreen> {
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: const Center(
-                  child: Text('❤️', style: TextStyle(fontSize: 20)),
+                  child: Icon(Icons.favorite_rounded, size: 20, color: Colors.black),
                 ),
               ),
             ],
@@ -105,9 +100,9 @@ class _HadithCollectionsScreenState extends State<HadithCollectionsScreen> {
           padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
           child: Container(
             decoration: BoxDecoration(
-              gradient: AppGradients.primary,
+              gradient: context.watch<ThemeProvider>().activeGradient,
               borderRadius: BorderRadius.circular(32),
-              boxShadow: AppShadows.floating,
+              boxShadow: AppShadows.dynamicFloating(context.watch<ThemeProvider>().primaryColor),
             ),
             padding: const EdgeInsets.all(24),
             child: Row(
@@ -159,7 +154,7 @@ class _HadithCollectionsScreenState extends State<HadithCollectionsScreen> {
                   ),
                 ),
                 const SizedBox(width: 10),
-                const Text('🕊️', style: TextStyle(fontSize: 32)),
+                const Icon(Icons.auto_awesome_rounded, size: 32, color: Colors.white),
               ],
             ),
           ),
@@ -187,7 +182,7 @@ class _HadithCollectionsScreenState extends State<HadithCollectionsScreen> {
                         vertical: 10,
                       ),
                       decoration: BoxDecoration(
-                        color: active ? AppTheme.primary : AppTheme.inputBg,
+                        color: active ? context.watch<ThemeProvider>().primaryColor : AppTheme.inputBg,
                         borderRadius: BorderRadius.circular(100),
                       ),
                       child: Text(
@@ -239,8 +234,8 @@ class _HadithCollectionsScreenState extends State<HadithCollectionsScreen> {
                       color: bgColor,
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Center(
-                      child: Text('📚', style: TextStyle(fontSize: 24)),
+                    child:  Center(
+                      child: Icon(Icons.collections_bookmark_rounded, size: 24, color: darkColor),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -296,13 +291,10 @@ class _HadithCollectionsScreenState extends State<HadithCollectionsScreen> {
                       borderRadius: BorderRadius.circular(18),
                     ),
                     child: const Center(
-                      child: Text(
-                        '→',
-                        style: TextStyle(
-                          color: AppTheme.primary,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w900,
-                        ),
+                      child: Icon(
+                        Icons.chevron_right_rounded,
+                        color: AppTheme.textMuted,
+                        size: 20,
                       ),
                     ),
                   ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/theme.dart';
+import '../core/theme_provider.dart';
 import '../data/asma_repository.dart';
 
 class AsmaScreen extends StatefulWidget {
@@ -33,7 +34,7 @@ class _AsmaScreenState extends State<AsmaScreen> {
       backgroundColor: AppTheme.background,
       body: SafeArea(
         child: _loading
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
+          ?  Center(child: CircularProgressIndicator(color: context.read<ThemeProvider>().primaryColor))
           : CustomScrollView(
               physics: const BouncingScrollPhysics(),
               slivers: [
@@ -93,9 +94,9 @@ class _AsmaScreenState extends State<AsmaScreen> {
           child: Container(
             width: double.infinity,
             decoration: BoxDecoration(
-              gradient: AppGradients.primary,
+              gradient: context.watch<ThemeProvider>().activeGradient,
               borderRadius: BorderRadius.circular(28),
-              boxShadow: AppShadows.floating,
+              boxShadow: AppShadows.dynamicFloating(context.watch<ThemeProvider>().primaryColor),
             ),
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -124,14 +125,14 @@ class _AsmaScreenState extends State<AsmaScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: const Color(0xFFF1F5F9)),
-        boxShadow: AppShadows.soft,
+        boxShadow: AppShadows.dynamicSoft(context.watch<ThemeProvider>().primaryColor),
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text((index + 1).toString().padLeft(2, '0'), 
-            style: const TextStyle(color: AppTheme.primary, fontSize: 11, fontWeight: FontWeight.w900)),
+            style: TextStyle(color: context.watch<ThemeProvider>().primaryColor, fontSize: 11, fontWeight: FontWeight.w900)),
           const Spacer(),
           FittedBox(
             fit: BoxFit.scaleDown,

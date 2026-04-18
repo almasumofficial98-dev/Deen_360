@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/theme.dart';
+import '../core/theme_provider.dart';
 import '../data/salah_repository.dart';
 
 class SalahScreen extends StatefulWidget {
@@ -40,7 +41,18 @@ class _SalahScreenState extends State<SalahScreen> {
   Widget build(BuildContext context) {
     // Extended prayer list including night periods
     final prayers = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha', 'Midnight'];
-    final icons = ['🌅', '☀️', '🏙️', '🌇', '🌙', '🌌', '🌃'];
+    final icons = [
+      Icons.wb_twilight_rounded,
+      Icons.wb_sunny_rounded,
+      Icons.light_mode_rounded,
+      Icons.wb_twilight_rounded,
+      Icons.nights_stay_rounded,
+      Icons.dark_mode_rounded,
+      Icons.nightlight_round,
+    ];
+
+    final theme = context.watch<ThemeProvider>();
+    final primaryColor = theme.primaryColor;
     
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -74,7 +86,7 @@ class _SalahScreenState extends State<SalahScreen> {
             ),
             Expanded(
               child: _loading
-                ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
+                ?  Center(child: CircularProgressIndicator(color: primaryColor))
                 : _timings == null
                   ? const Center(child: Text('Unable to fetch timings.', style: TextStyle(color: AppTheme.textLight)))
                   : ListView(
@@ -83,7 +95,11 @@ class _SalahScreenState extends State<SalahScreen> {
                       children: [
                         // Hero
                         Container(
-                          decoration: BoxDecoration(gradient: AppGradients.primary, borderRadius: BorderRadius.circular(30), boxShadow: AppShadows.floating),
+                          decoration: BoxDecoration(
+                            gradient: theme.activeGradient, 
+                            borderRadius: BorderRadius.circular(30), 
+                            boxShadow: AppShadows.dynamicFloating(primaryColor)
+                          ),
                           padding: const EdgeInsets.all(24),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -114,20 +130,20 @@ class _SalahScreenState extends State<SalahScreen> {
                             margin: const EdgeInsets.only(bottom: 12),
                             padding: const EdgeInsets.all(18),
                             decoration: BoxDecoration(
-                              color: isCurrent ? (['Isha', 'Midnight'].contains(name) ? const Color(0xFF1E1B4B) : AppTheme.primary) : Colors.white,
+                              color: isCurrent ? primaryColor : Colors.white,
                               borderRadius: BorderRadius.circular(22),
                               border: Border.all(color: isCurrent ? Colors.transparent : const Color(0xFFF1F5F9)),
-                              boxShadow: isCurrent ? AppShadows.floating : AppShadows.soft,
+                              boxShadow: isCurrent ? AppShadows.dynamicFloating(primaryColor) : AppShadows.dynamicSoft(primaryColor),
                             ),
                             child: Row(
                               children: [
                                 Container(
                                   width: 48, height: 48,
                                   decoration: BoxDecoration(
-                                    color: isCurrent ? Colors.white.withValues(alpha: 0.15) : AppTheme.primary.withValues(alpha: 0.08),
+                                    color: isCurrent ? Colors.white.withValues(alpha: 0.15) : primaryColor.withValues(alpha: 0.08),
                                     borderRadius: BorderRadius.circular(16),
                                   ),
-                                  child: Center(child: Text(icon, style: const TextStyle(fontSize: 22))),
+                                  child: Center(child: Icon(icon, size: 22, color: isCurrent ? Colors.white : primaryColor)),
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
@@ -142,14 +158,14 @@ class _SalahScreenState extends State<SalahScreen> {
                                     ],
                                   ),
                                 ),
-                                Text(time, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: isCurrent ? Colors.white : AppTheme.primary)),
+                                Text(time, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: isCurrent ? Colors.white : primaryColor)),
                               ],
                             ),
                           );
                         }),
 
                         // Tahajjud Special Row
-                        _buildTahajjudRow(),
+                        _buildTahajjudRow(primaryColor),
                       ],
                     ),
             ),
@@ -159,7 +175,7 @@ class _SalahScreenState extends State<SalahScreen> {
     );
   }
 
-  Widget _buildTahajjudRow() {
+  Widget _buildTahajjudRow(Color primaryColor) {
     final t = _timings;
     if (t == null) return const SizedBox();
     
@@ -171,7 +187,7 @@ class _SalahScreenState extends State<SalahScreen> {
       margin: const EdgeInsets.only(top: 8, bottom: 20),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: isCurrent ? const Color(0xFF312E81) : const Color(0xFFF8FAFC),
+        color: isCurrent ? primaryColor : const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: isCurrent ? Colors.transparent : const Color(0xFFF1F5F9)),
       ),
@@ -183,7 +199,7 @@ class _SalahScreenState extends State<SalahScreen> {
               color: isCurrent ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Center(child: Text('✨', style: TextStyle(fontSize: 20))),
+            child:  Center(child: Icon(Icons.auto_awesome_rounded, size: 20, color: isCurrent ? Colors.white : primaryColor)),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -199,7 +215,7 @@ class _SalahScreenState extends State<SalahScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(start, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: isCurrent ? Colors.white : AppTheme.primary)),
+              Text(start, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: isCurrent ? Colors.white : primaryColor)),
               Text('until Fajr', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: isCurrent ? Colors.white.withValues(alpha: 0.5) : AppTheme.textMuted)),
             ],
           ),

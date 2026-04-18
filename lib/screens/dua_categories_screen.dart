@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/theme.dart';
+import '../core/theme_provider.dart';
 import '../data/dua_repository.dart';
 
 class DuaCategoriesScreen extends StatelessWidget {
@@ -31,7 +32,7 @@ class DuaCategoriesScreen extends StatelessWidget {
               cursor++;
               for (final sub in cat.subCategories) {
                 if (index == cursor) {
-                  return _buildSubCatCard(sub);
+                  return _buildSubCatCard(context, sub);
                 }
                 cursor++;
               }
@@ -53,7 +54,7 @@ class DuaCategoriesScreen extends StatelessWidget {
               GestureDetector(
                 onTap: () => onNavigate('home'),
                 child: Container(width: 44, height: 44, decoration: BoxDecoration(color: AppTheme.inputBg, borderRadius: BorderRadius.circular(14)),
-                  child: const Center(child: Text('←', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)))),
+                  child: const Center(child: Icon(Icons.arrow_back_rounded, size: 20, color: AppTheme.text))),
               ),
               Expanded(child: Column(children: const [
                 Text('Hisnul Muslim', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppTheme.text)),
@@ -67,7 +68,7 @@ class DuaCategoriesScreen extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
           child: Container(
-            decoration: BoxDecoration(gradient: AppGradients.primary, borderRadius: BorderRadius.circular(32), boxShadow: AppShadows.floating),
+            decoration: BoxDecoration(gradient: context.watch<ThemeProvider>().activeGradient, borderRadius: BorderRadius.circular(32), boxShadow: AppShadows.dynamicFloating(context.watch<ThemeProvider>().primaryColor)),
             padding: const EdgeInsets.all(28),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,12 +90,12 @@ class DuaCategoriesScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(String icon, String title) {
+  Widget _buildSectionHeader(String iconKey, String title) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 25, 20, 15),
       child: Row(
         children: [
-          Text(icon, style: const TextStyle(fontSize: 18)),
+          Icon(_mapIcon(iconKey), size: 18, color: const Color(0xFF94A3B8)),
           const SizedBox(width: 10),
           Text(title.toUpperCase(), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Color(0xFF94A3B8), letterSpacing: 1)),
         ],
@@ -102,8 +103,9 @@ class DuaCategoriesScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSubCatCard(SubCategory sub) {
+  Widget _buildSubCatCard(BuildContext context, SubCategory sub) {
     final hasDuas = sub.duas.isNotEmpty;
+    final primaryColor = context.watch<ThemeProvider>().primaryColor;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
       child: GestureDetector(
@@ -114,14 +116,14 @@ class DuaCategoriesScreen extends StatelessWidget {
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: const Color(0xFFF1F5F9)),
-            boxShadow: AppShadows.soft,
+            boxShadow: AppShadows.dynamicSoft(primaryColor),
           ),
           child: Row(
             children: [
               Container(
                 width: 48, height: 48,
-                decoration: BoxDecoration(color: AppTheme.primary.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(14)),
-                child: Center(child: Text(sub.icon, style: const TextStyle(fontSize: 22))),
+                decoration: BoxDecoration(color: primaryColor.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(14)),
+                child: Center(child: Icon(_mapIcon(sub.icon), size: 22, color: primaryColor)),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -134,11 +136,106 @@ class DuaCategoriesScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              const Text('→', style: TextStyle(fontSize: 20, color: Color(0xFFCBD5E1), fontWeight: FontWeight.w800)),
+              const Icon(Icons.chevron_right_rounded, size: 20, color: Color(0xFFCBD5E1)),
             ],
           ),
         ),
       ),
     );
+  }
+
+  IconData _mapIcon(String key) {
+    switch (key.toLowerCase()) {
+      // Descriptive Keys
+      case 'core': return Icons.explore_rounded;
+      case 'explore': return Icons.explore_rounded;
+      case 'morning': return Icons.wb_twilight_rounded;
+      case 'evening': return Icons.brightness_3_rounded;
+      case 'sleep': return Icons.bedtime_rounded;
+      case 'bedtime': return Icons.bedtime_rounded;
+      case 'awake': return Icons.alarm_rounded;
+      case 'mosque': return Icons.mosque_rounded;
+      case 'water': return Icons.opacity_rounded;
+      case 'clean': return Icons.auto_awesome_rounded;
+      case 'walk': return Icons.directions_walk_rounded;
+      case 'door': return Icons.sensor_door_rounded;
+      case 'dua': return Icons.pan_tool_alt_rounded;
+      case 'restaurant': return Icons.restaurant_rounded;
+      case 'mood': return Icons.mood_rounded;
+      case 'drink': return Icons.local_drink_rounded;
+      case 'clothes': return Icons.checkroom_rounded;
+      case 'home': return Icons.home_rounded;
+      case 'person': return Icons.person_rounded;
+      case 'sad': return Icons.sentiment_dissatisfied_rounded;
+      case 'travel': return Icons.card_travel_rounded;
+      case 'car': return Icons.directions_car_rounded;
+      case 'health': return Icons.health_and_safety_rounded;
+      case 'security': return Icons.security_rounded;
+      case 'book': return Icons.menu_book_rounded;
+      case 'knowledge': return Icons.psychology_rounded;
+      case 'favorite': return Icons.favorite_rounded;
+      case 'group': return Icons.group_rounded;
+      case 'payments': return Icons.payments_rounded;
+      case 'nature': return Icons.terrain_rounded;
+      case 'flash': return Icons.bolt_rounded;
+      case 'night': return Icons.nights_stay_rounded;
+      case 'work': return Icons.work_rounded;
+      case 'wc': return Icons.wc_rounded;
+
+      // Legacy Emoji Fallbacks
+      case "🧭": return Icons.explore_rounded;
+      case "🌅": return Icons.wb_twilight_rounded;
+      case "🌆": return Icons.wb_sunny_rounded;
+      case "🌙": return Icons.nights_stay_rounded;
+      case "🛏️": case "🛏": return Icons.bedtime_rounded;
+      case "🥱": return Icons.alarm_rounded;
+      case "🕌": return Icons.mosque_rounded;
+      case "💧": return Icons.opacity_rounded;
+      case "✨": return Icons.auto_awesome_rounded;
+      case "🚶": return Icons.directions_walk_rounded;
+      case "🚪": return Icons.sensor_door_rounded;
+      case "🤲": return Icons.pan_tool_alt_rounded;
+      case "🍽️": case "🍽": case "🍴": return Icons.restaurant_rounded;
+      case "😋": return Icons.mood_rounded;
+      case "🥛": return Icons.local_drink_rounded;
+      case "👕": return Icons.checkroom_rounded;
+      case "🏠": return Icons.home_rounded;
+      case "🚻": return Icons.wc_rounded;
+      case "🧼": return Icons.cleaning_services_rounded;
+      case "😔": return Icons.sentiment_dissatisfied_rounded;
+      case "😢": return Icons.sentiment_very_dissatisfied_rounded;
+      case "😠": return Icons.sentiment_very_dissatisfied_rounded;
+      case "🧳": return Icons.card_travel_rounded;
+      case "🚗": return Icons.directions_car_rounded;
+      case "✈️": case "✈": return Icons.flight_takeoff_rounded;
+      case "🏥": return Icons.medical_services_rounded;
+      case "🤒": return Icons.sick_rounded;
+      case "💐": return Icons.local_florist_rounded;
+      case "🛡️": case "🛡": return Icons.security_rounded;
+      case "🧿": return Icons.remove_red_eye_rounded;
+      case "👿": return Icons.warning_amber_rounded;
+      case "📿": return Icons.auto_fix_high_rounded;
+      case "🕋": return Icons.auto_awesome_mosaic_rounded;
+      case "🧠": return Icons.psychology_rounded;
+      case "📚": return Icons.menu_book_rounded;
+      case "🎓": return Icons.school_rounded;
+      case "❤️": return Icons.favorite_rounded;
+      case "👨‍👩‍👧‍👦": return Icons.group_rounded;
+      case "💍": return Icons.favorite_border_rounded;
+      case "⚔️": case "⚔": return Icons.gavel_rounded;
+      case "💳": return Icons.credit_card_rounded;
+      case "⛰️": case "⛰": return Icons.terrain_rounded;
+      case "⛓️": case "⛓": return Icons.link_off_rounded;
+      case "🌧️": case "🌧": return Icons.cloudy_snowing;
+      case "⚡": return Icons.flash_on_rounded;
+      case "💨": return Icons.air_rounded;
+      case "💼": return Icons.business_center_rounded;
+      case "💰": return Icons.payments_rounded;
+      case "🏢": return Icons.apartment_rounded;
+      case "🤝": return Icons.handshake_rounded;
+      case "🤧": return Icons.healing_rounded;
+      case "👥": return Icons.people_rounded;
+      default: return Icons.category_rounded;
+    }
   }
 }

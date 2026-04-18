@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:audioplayers/audioplayers.dart';
 import 'package:share_plus/share_plus.dart';
 import '../core/theme.dart';
+import '../core/theme_provider.dart';
 import '../data/quran_repository.dart';
 
 class SurahScreen extends StatefulWidget {
@@ -226,7 +227,7 @@ class _SurahScreenState extends State<SurahScreen> {
           decoration: BoxDecoration(
             color: AppTheme.surface,
             borderRadius: BorderRadius.circular(28),
-            boxShadow: AppShadows.floating,
+            boxShadow: AppShadows.dynamicFloating(context.watch<ThemeProvider>().primaryColor),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -397,7 +398,7 @@ class _SurahScreenState extends State<SurahScreen> {
                         child: Container(
                           width: 44, height: 44,
                           decoration: BoxDecoration(color: AppTheme.inputBg, borderRadius: BorderRadius.circular(14)),
-                          child: const Center(child: Text('←', style: TextStyle(fontSize: 20, color: AppTheme.text, fontWeight: FontWeight.w800))),
+                          child: const Center(child: Icon(Icons.arrow_back_rounded, size: 20, color: AppTheme.text)),
                         ),
                       ),
                       Expanded(
@@ -420,7 +421,7 @@ class _SurahScreenState extends State<SurahScreen> {
                           child: Icon(
                             _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
                             size: 22,
-                            color: _isPlaying ? Colors.white : AppTheme.primary,
+                            color: _isPlaying ? Colors.white : context.watch<ThemeProvider>().primaryColor,
                           ),
                         ),
                       ),
@@ -433,7 +434,7 @@ class _SurahScreenState extends State<SurahScreen> {
                   child: FractionallySizedBox(
                     alignment: Alignment.centerLeft,
                     widthFactor: _readProgress,
-                    child: Container(color: AppTheme.primary),
+                    child: Container(color: context.watch<ThemeProvider>().primaryColor),
                   ),
                 ),
               ],
@@ -444,18 +445,18 @@ class _SurahScreenState extends State<SurahScreen> {
           if (_playingAyah != null)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              color: AppTheme.primary.withValues(alpha: 0.06),
+              color: context.watch<ThemeProvider>().primaryColor.withValues(alpha: 0.06),
               child: Row(
                 children: [
                   if (_isLoadingAudio)
                     const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primary))
                   else
-                    const Icon(Icons.graphic_eq_rounded, size: 20, color: AppTheme.primary),
+                     Icon(Icons.graphic_eq_rounded, size: 20, color: context.watch<ThemeProvider>().primaryColor),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       'Playing Ayah $_playingAyah • ${_surahTitle}',
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppTheme.primary),
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: context.watch<ThemeProvider>().primaryColor),
                     ),
                   ),
                   GestureDetector(
@@ -465,8 +466,8 @@ class _SurahScreenState extends State<SurahScreen> {
                     },
                     child: Container(
                       width: 32, height: 32,
-                      decoration: BoxDecoration(color: AppTheme.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)),
-                      child: const Icon(Icons.close_rounded, size: 16, color: AppTheme.primary),
+                      decoration: BoxDecoration(color: context.watch<ThemeProvider>().primaryColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)),
+                      child:  Icon(Icons.close_rounded, size: 16, color: context.watch<ThemeProvider>().primaryColor),
                     ),
                   ),
                 ],
@@ -476,7 +477,7 @@ class _SurahScreenState extends State<SurahScreen> {
           // Content
           Expanded(
             child: _loading
-              ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
+              ?  Center(child: CircularProgressIndicator(color: context.read<ThemeProvider>().primaryColor))
               : ListView.builder(
                   controller: _scrollController,
                   physics: const BouncingScrollPhysics(),
@@ -499,9 +500,9 @@ class _SurahScreenState extends State<SurahScreen> {
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
       child: Container(
         decoration: BoxDecoration(
-          gradient: AppGradients.primary,
+          gradient: context.watch<ThemeProvider>().activeGradient,
           borderRadius: BorderRadius.circular(32),
-          boxShadow: AppShadows.floating,
+          boxShadow: AppShadows.dynamicFloating(context.watch<ThemeProvider>().primaryColor),
         ),
         padding: const EdgeInsets.all(32),
         child: Column(
@@ -524,7 +525,7 @@ class _SurahScreenState extends State<SurahScreen> {
     final isCurrentlyPlaying = _playingAyah == ayahNum;
 
     return Container(
-      color: isCurrentlyPlaying ? AppTheme.primary.withValues(alpha: 0.04) : Colors.transparent,
+      color: isCurrentlyPlaying ? context.watch<ThemeProvider>().primaryColor.withValues(alpha: 0.04) : Colors.transparent,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         child: Column(
@@ -537,7 +538,7 @@ class _SurahScreenState extends State<SurahScreen> {
                 Container(
                   width: 40, height: 40,
                   decoration: BoxDecoration(color: AppTheme.inputBg, borderRadius: BorderRadius.circular(12)),
-                  child: Center(child: Text('$ayahNum', style: const TextStyle(color: AppTheme.primary, fontWeight: FontWeight.w900, fontSize: 14))),
+                  child: Center(child: Text('$ayahNum', style: TextStyle(color: context.watch<ThemeProvider>().primaryColor, fontWeight: FontWeight.w900, fontSize: 14))),
                 ),
                 Row(
                   children: [
@@ -598,7 +599,7 @@ class _ActionBtn extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         width: 40, height: 40,
         decoration: BoxDecoration(
-          color: isActive ? AppTheme.primary : AppTheme.inputBg,
+          color: isActive ? context.watch<ThemeProvider>().primaryColor : AppTheme.inputBg,
           borderRadius: BorderRadius.circular(12),
         ),
         child: isLoading
@@ -632,10 +633,10 @@ class _ShareOption extends StatelessWidget {
               Container(
                 width: 44, height: 44,
                 decoration: BoxDecoration(
-                  color: AppTheme.primary.withValues(alpha: 0.08),
+                  color: context.watch<ThemeProvider>().primaryColor.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(icon, size: 20, color: AppTheme.primary),
+                child: Icon(icon, size: 20, color: context.watch<ThemeProvider>().primaryColor),
               ),
               const SizedBox(width: 16),
               Expanded(

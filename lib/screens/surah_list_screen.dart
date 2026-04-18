@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/theme.dart';
+import '../core/theme_provider.dart';
+import 'package:provider/provider.dart';
 
 
 class SurahInfo {
@@ -109,7 +111,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _NavButton(icon: '≡', onTap: () => widget.onNavigate('home')),
+                  _NavButton(icon: Icons.arrow_back_rounded, onTap: () => widget.onNavigate('home')),
                   const Text('Noble Quran', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AppTheme.text, letterSpacing: -0.5)),
                   const SizedBox(width: 44),
                 ],
@@ -141,9 +143,9 @@ class _SurahListScreenState extends State<SurahListScreen> {
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
       child: Container(
         decoration: BoxDecoration(
-          gradient: AppGradients.primary,
+          gradient: context.watch<ThemeProvider>().activeGradient,
           borderRadius: BorderRadius.circular(32),
-          boxShadow: AppShadows.floating,
+          boxShadow: AppShadows.dynamicFloating(context.watch<ThemeProvider>().primaryColor),
         ),
         padding: const EdgeInsets.all(24),
         child: Row(
@@ -167,7 +169,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
                       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
-                      child: const Text('Resume Reading', style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.w800, fontSize: 13)),
+                      child: Text('Resume Reading', style: TextStyle(color: context.watch<ThemeProvider>().primaryColor, fontWeight: FontWeight.w800, fontSize: 13)),
                     ),
                   ),
                 ],
@@ -176,7 +178,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
             Container(
               width: 70, height: 70,
               decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
-              child: const Center(child: Text('📖', style: TextStyle(fontSize: 32))),
+              child: const Center(child: Icon(Icons.menu_book_rounded, color: Colors.white, size: 36)),
             ),
           ],
         ),
@@ -225,7 +227,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               const Text('All Surahs', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AppTheme.text, letterSpacing: -0.5)),
-              Text('${_filteredList.length} Found', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.primary, letterSpacing: 1)),
+              Text('${_filteredList.length} Found', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: context.watch<ThemeProvider>().primaryColor, letterSpacing: 1)),
             ],
           ),
         ),
@@ -247,8 +249,8 @@ class _SurahListScreenState extends State<SurahListScreen> {
                 children: [
                   Container(
                     width: 44, height: 44,
-                    decoration: BoxDecoration(color: AppTheme.primary.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(12)),
-                    child: Center(child: Text('${surah.number}', style: const TextStyle(color: AppTheme.primary, fontWeight: FontWeight.w900, fontSize: 14))),
+                    decoration: BoxDecoration(color: context.watch<ThemeProvider>().primaryColor.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(12)),
+                    child: Center(child: Text('${surah.number}', style: TextStyle(color: context.watch<ThemeProvider>().primaryColor, fontWeight: FontWeight.w900, fontSize: 14))),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -262,7 +264,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
                       ],
                     ),
                   ),
-                  Text(surah.name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: AppTheme.primary)),
+                  Text(surah.name, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: context.watch<ThemeProvider>().primaryColor)),
                 ],
               ),
             ),
@@ -275,7 +277,7 @@ class _SurahListScreenState extends State<SurahListScreen> {
 }
 
 class _NavButton extends StatelessWidget {
-  final String icon;
+  final IconData icon;
   final VoidCallback onTap;
   const _NavButton({required this.icon, required this.onTap});
 
@@ -286,7 +288,7 @@ class _NavButton extends StatelessWidget {
       child: Container(
         width: 44, height: 44,
         decoration: BoxDecoration(color: AppTheme.inputBg, borderRadius: BorderRadius.circular(22)),
-        child: Center(child: Text(icon, style: const TextStyle(fontSize: 22, color: AppTheme.primary, fontWeight: FontWeight.w800))),
+        child: Center(child: Icon(icon, size: 22, color: context.watch<ThemeProvider>().primaryColor)),
       ),
     );
   }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/theme.dart';
+import '../core/theme_provider.dart';
+import 'package:provider/provider.dart';
 
 class PillButton extends StatelessWidget {
   final String title;
@@ -19,11 +21,14 @@ class PillButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = context.watch<ThemeProvider>();
+    final primary = color ?? theme.primaryColor;
+
     return Container(
       decoration: BoxDecoration(
-        color: color ?? AppTheme.primary,
+        color: primary,
         borderRadius: BorderRadius.circular(AppRadius.pill),
-        boxShadow: AppShadows.soft,
+        boxShadow: AppShadows.dynamicSoft(primary),
       ),
       child: Material(
         color: Colors.transparent,

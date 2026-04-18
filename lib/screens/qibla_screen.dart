@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:flutter_compass_v2/flutter_compass_v2.dart';
 import 'package:geolocator/geolocator.dart';
 import '../core/theme.dart';
+import '../core/theme_provider.dart';
 
 class QiblaScreen extends StatefulWidget {
   final Function(String, [Map<String, dynamic>?]) onNavigate;
@@ -121,7 +123,7 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
                     child: Container(
                       width: 44, height: 44,
                       decoration: BoxDecoration(color: AppTheme.inputBg, borderRadius: BorderRadius.circular(14)),
-                      child: const Center(child: Text('←', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800))),
+                      child: const Center(child: Icon(Icons.arrow_back_rounded, size: 20, color: AppTheme.text)),
                     ),
                   ),
                   Expanded(
@@ -154,7 +156,7 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const SizedBox(width: 60, height: 60, child: CircularProgressIndicator(strokeWidth: 3, color: AppTheme.primary)),
+          SizedBox(width: 60, height: 60, child: CircularProgressIndicator(strokeWidth: 3, color: context.watch<ThemeProvider>().primaryColor)),
           const SizedBox(height: 24),
           const Text('Calibrating Compass...', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppTheme.text)),
           const SizedBox(height: 8),
@@ -188,7 +190,7 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                decoration: BoxDecoration(color: AppTheme.primary, borderRadius: BorderRadius.circular(100)),
+                decoration: BoxDecoration(color: context.watch<ThemeProvider>().primaryColor, borderRadius: BorderRadius.circular(100)),
                 child: const Text('Retry', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15)),
               ),
             ),
@@ -209,7 +211,7 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 300),
             decoration: BoxDecoration(
-              gradient: isAligned ? AppGradients.primary : null,
+              gradient: isAligned ? context.watch<ThemeProvider>().activeGradient : null,
               color: isAligned ? null : AppTheme.surface,
               borderRadius: BorderRadius.circular(24),
               border: isAligned ? null : Border.all(color: const Color(0xFFF1F5F9)),
@@ -217,9 +219,10 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
             padding: const EdgeInsets.all(20),
             child: Row(
               children: [
-                Text(
-                  isAligned ? '🕋' : '🧭',
-                  style: const TextStyle(fontSize: 36),
+                Icon(
+                  isAligned ? Icons.mosque_rounded : Icons.explore_rounded,
+                  size: 36,
+                  color: isAligned ? Colors.white : context.watch<ThemeProvider>().primaryColor,
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -261,7 +264,7 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: isAligned ? AppTheme.primary.withValues(alpha: 0.3) : const Color(0xFFF1F5F9),
+                            color: isAligned ? context.watch<ThemeProvider>().primaryColor.withValues(alpha: 0.3) : const Color(0xFFF1F5F9),
                             width: 2,
                           ),
                         ),
@@ -278,7 +281,7 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
                         color: Colors.white,
                         shape: BoxShape.circle,
                         border: Border.all(color: const Color(0xFFF1F5F9), width: 2),
-                        boxShadow: AppShadows.soft,
+                        boxShadow: AppShadows.dynamicSoft(context.watch<ThemeProvider>().primaryColor),
                       ),
                       child: Stack(
                         alignment: Alignment.center,
@@ -328,7 +331,7 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
                             gradient: LinearGradient(
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
-                              colors: [isAligned ? AppTheme.primary : AppTheme.error, Colors.transparent],
+                              colors: [isAligned ? context.watch<ThemeProvider>().primaryColor : AppTheme.error, Colors.transparent],
                             ),
                             borderRadius: BorderRadius.circular(2),
                           ),
@@ -338,15 +341,16 @@ class _QiblaScreenState extends State<QiblaScreen> with SingleTickerProviderStat
                         Container(
                           width: 52, height: 52,
                           decoration: BoxDecoration(
-                            color: isAligned ? AppTheme.primary : Colors.white,
+                            color: isAligned ? context.watch<ThemeProvider>().primaryColor : Colors.white,
                             shape: BoxShape.circle,
-                            boxShadow: AppShadows.floating,
-                            border: Border.all(color: isAligned ? AppTheme.primaryDark : const Color(0xFFE5E7EB), width: 3),
+                            boxShadow: AppShadows.dynamicFloating(context.watch<ThemeProvider>().primaryColor),
+                            border: Border.all(color: isAligned ? context.watch<ThemeProvider>().primaryColor.withValues(alpha: 0.2) : const Color(0xFFE5E7EB), width: 3),
                           ),
                           child: Center(
-                            child: Text(
-                              '🕋',
-                              style: const TextStyle(fontSize: 24),
+                            child: Icon(
+                              Icons.mosque_rounded,
+                              size: 24,
+                              color: isAligned ? Colors.white : context.watch<ThemeProvider>().primaryColor,
                             ),
                           ),
                         ),
