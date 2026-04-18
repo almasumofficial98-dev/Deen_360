@@ -208,7 +208,7 @@ class _MainLayoutState extends State<MainLayout> {
             ),
 
             // Floating Bottom Navigation
-            if (_activeTab != 'postStudio')
+            if (_activeTab.toLowerCase() != 'poststudio')
               Positioned(
                 bottom: 30,
               left: 0,

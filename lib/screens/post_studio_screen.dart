@@ -46,9 +46,18 @@ class _PostStudioScreenState extends State<PostStudioScreen> {
   @override
   void initState() {
     super.initState();
+    // Hide system UI for immersive experience
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     _inputText = widget.initialText ?? "Verily, with hardship comes ease.";
     _inputSource = widget.initialSource ?? "Surah Ash-Sharh [94:6]";
     _updateImageUrl();
+  }
+
+  @override
+  void dispose() {
+    // Restore system UI
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    super.dispose();
   }
 
   static const List<String> _natureKeywords = [
@@ -309,8 +318,14 @@ class _PostStudioScreenState extends State<PostStudioScreen> {
   Widget build(BuildContext context) {
     final primaryColor = context.watch<ThemeProvider>().primaryColor;
 
-    return Scaffold(
-      backgroundColor: Colors.black,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        widget.onNavigate('home');
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
       body: Stack(
         children: [
           // Capturable Area
