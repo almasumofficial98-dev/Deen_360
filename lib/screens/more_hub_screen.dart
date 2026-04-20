@@ -15,6 +15,7 @@ class MoreHubScreen extends StatelessWidget {
       {'title': 'Salah', 'sub': 'Daily Timings', 'icon': Icons.calendar_today_rounded, 'route': 'salah'},
       {'title': 'Dua Library', 'sub': 'Hisnul Muslim', 'icon': Icons.pan_tool_alt_rounded, 'route': 'duaCategories'},
       {'title': 'Qibla', 'sub': 'Kaaba Direction', 'icon': Icons.explore_rounded, 'route': 'qibla'},
+      {'title': 'Zakat & Wealth', 'sub': 'Authentic Tracker', 'icon': Icons.account_balance_wallet_rounded, 'route': 'zakat'},
     ];
 
     return Scaffold(

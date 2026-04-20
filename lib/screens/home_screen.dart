@@ -41,6 +41,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   String _currentStart = '--';
   String _currentEnd = '--';
   String _nextTime = '--';
+  double _periodProgress = 0.0;
 
   Timer? _clockTimer;
   late ConfettiController _confettiController;
@@ -279,18 +280,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       final midnightToday = _parseTime(t['Midnight'] as String?, today);
       if (now.isBefore(midnightToday)) {
         final diff = midnightToday.difference(now);
+        final start = isha.subtract(const Duration(days: 1));
+        final total = midnightToday.difference(start).inSeconds;
+        final elapsed = now.difference(start).inSeconds;
         _setHUD(
           'ISHA',
           'Isha Salah',
           'Midnight',
-          _fmt12(isha.subtract(const Duration(days: 1))),
+          _fmt12(start),
           _fmt12(midnightToday),
           _fmt12(midnightToday),
           diff,
+          total > 0 ? elapsed / total : 0,
         );
         return;
       }
       final diff = fajr.difference(now);
+      final total = fajr.difference(midnightToday).inSeconds;
+      final elapsed = now.difference(midnightToday).inSeconds;
       _setHUD(
         'TAHAJJUD',
         'Last Third of Night',
@@ -299,6 +306,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         _fmt12(fajr),
         _fmt12(fajr),
         diff,
+        total > 0 ? elapsed / total : 0,
       );
       return;
     }
@@ -365,6 +373,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       if ((now.isAfter(block.start) || now.isAtSameMomentAs(block.start)) &&
           now.isBefore(block.end)) {
         final diff = block.end.difference(now);
+        final total = block.end.difference(block.start).inSeconds;
+        final elapsed = now.difference(block.start).inSeconds;
         _setHUD(
           block.name,
           block.label,
@@ -373,12 +383,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           _fmt12(block.end),
           block.nextTimeStr,
           diff,
+          total > 0 ? elapsed / total : 0,
         );
         return;
       }
     }
 
-    _setHUD('--', 'Calculating...', '--', '--', '--', '--', Duration.zero);
+    _setHUD('--', 'Calculating...', '--', '--', '--', '--', Duration.zero, 0.0);
   }
 
   void _setHUD(
@@ -389,6 +400,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     String end,
     String nextTime,
     Duration diff,
+    double progress,
   ) {
     final h = diff.inHours;
     final m = diff.inMinutes % 60;
@@ -402,6 +414,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         _currentEnd = end;
         _nextTime = nextTime;
         _timeRemaining = _formatRemaining(diff);
+        _periodProgress = progress.clamp(0.0, 1.0);
       });
       if (name != '--') {
         context.read<ThemeProvider>().updateFromPrayerBlock(name);
@@ -708,7 +721,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final isLight = AppGradients.isLightText(_currentPrayerName);
     final foregroundColor = isLight ? Colors.white : AppTheme.text;
     final mutedForegroundColor = isLight
-        ? Colors.white.withValues(alpha: 0.75)
+        ? Colors.white.withValues(alpha: 0.7)
         : AppTheme.textMuted;
     final secondaryBgColor = isLight
         ? Colors.white.withValues(alpha: 0.2)
@@ -718,7 +731,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       onTap: () => widget.onNavigate('salah'),
       child: Container(
         margin: const EdgeInsets.fromLTRB(20, 0, 20, 40),
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
         decoration: BoxDecoration(
           gradient: gradient,
           borderRadius: BorderRadius.circular(32),
@@ -731,133 +744,68 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
         child: Column(
           children: [
+            // 1. Status Header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Flexible(
-                  child: GestureDetector(
-                    onTap: _showLocationSearch,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
+                GestureDetector(
+                  onTap: _showLocationSearch,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: secondaryBgColor,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: foregroundColor.withValues(alpha: 0.1),
                       ),
-                      decoration: BoxDecoration(
-                        color: secondaryBgColor,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: foregroundColor.withValues(alpha: 0.1),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.location_on_rounded,
+                          size: 12,
+                          color: foregroundColor,
                         ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.location_on_rounded,
-                            size: 14,
+                        const SizedBox(width: 6),
+                        Text(
+                          _locationName,
+                          style: TextStyle(
                             color: foregroundColor,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.2,
                           ),
-                          const SizedBox(width: 6),
-                          Flexible(
-                            child: Text(
-                              _locationName,
-                              style: TextStyle(
-                                color: foregroundColor,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 0.5,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: secondaryBgColor,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: foregroundColor.withValues(alpha: 0.1),
+                    ),
+                  ),
                   child: Row(
                     children: [
-                      Icon(_weatherIcon, size: 14, color: foregroundColor),
+                      Icon(_weatherIcon, size: 12, color: foregroundColor),
                       const SizedBox(width: 6),
                       Text(
-                        '${_temperature != null ? "$_temperature°C" : "--°C"}',
+                        '${_temperature != null ? "$_temperature°" : "--°"}',
                         style: TextStyle(
                           color: foregroundColor,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  flex: 12,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          _currentPrayerName,
-                          style: TextStyle(
-                            color: foregroundColor,
-                            fontSize: 48,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -1,
-                            height: 1.08,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        _currentPrayerLabel.isNotEmpty
-                            ? _currentPrayerLabel
-                            : 'Current Period',
-                        style: TextStyle(
-                          color: mutedForegroundColor,
                           fontSize: 12,
                           fontWeight: FontWeight.w800,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 15),
-                Expanded(
-                  flex: 14,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          _timeRemaining,
-                          style: TextStyle(
-                            color: foregroundColor,
-                            fontSize: 30,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Until $_nextPrayerName',
-                        style: TextStyle(
-                          color: mutedForegroundColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.5,
                         ),
                       ),
                     ],
@@ -865,30 +813,99 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
               ],
             ),
-            const SizedBox(height: 24),
-            Container(
-              height: 1,
-              color: foregroundColor.withValues(alpha: 0.15),
+            const SizedBox(height: 48),
+
+            // 2. Hero Center
+            Column(
+              children: [
+                Text(
+                  _currentPrayerName,
+                  style: TextStyle(
+                    color: mutedForegroundColor,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 4.0,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    _timeRemaining,
+                    style: TextStyle(
+                      color: foregroundColor,
+                      fontSize: 64,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -2.5,
+                      height: 1,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'UNTIL $_nextPrayerName',
+                  style: TextStyle(
+                    color: mutedForegroundColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
+
+            const SizedBox(height: 48),
+
+            // 3. Horizon Progress
+            Stack(
+              children: [
+                Container(
+                  height: 3,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: foregroundColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(1.5),
+                  ),
+                ),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    return AnimatedContainer(
+                      duration: const Duration(seconds: 1),
+                      height: 3,
+                      width: constraints.maxWidth * _periodProgress,
+                      decoration: BoxDecoration(
+                        color: foregroundColor,
+                        borderRadius: BorderRadius.circular(1.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: foregroundColor.withValues(alpha: 0.3),
+                            blurRadius: 6,
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 32),
+
+            // 4. Stats Footer
             Row(
               children: [
                 _buildStatItem(
-                  '$_currentPrayerName Started At',
+                  '$_currentPrayerName STARTED AT',
                   _currentStart,
                   foregroundColor,
                   mutedForegroundColor,
                 ),
-                Container(
-                  width: 1,
-                  height: 30,
-                  color: foregroundColor.withValues(alpha: 0.15),
-                ),
                 _buildStatItem(
-                  '$_nextPrayerName Starts At',
+                  '$_nextPrayerName STARTS AT',
                   _nextTime,
                   foregroundColor,
                   mutedForegroundColor,
+                  isRight: true,
                 ),
               ],
             ),
@@ -902,26 +919,27 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     String label,
     String value,
     Color foreground,
-    Color mutedForeground,
-  ) {
+    Color mutedForeground, {
+    bool isRight = false,
+  }) {
     return Expanded(
       child: Column(
+        crossAxisAlignment: isRight
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
         children: [
           Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            label.toUpperCase(),
             style: TextStyle(
               color: mutedForeground,
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: foreground,
               fontSize: 14,

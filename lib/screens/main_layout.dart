@@ -25,6 +25,7 @@ import 'salah_guide_screen.dart';
 import 'quran_home_screen.dart';
 import 'juz_list_screen.dart';
 import 'post_studio_screen.dart';
+import 'zakat_screen.dart';
 
 class _NavigationPoint {
   final String target;
@@ -175,6 +176,8 @@ class _MainLayoutState extends State<MainLayout> {
           initialText: _params['text'],
           initialSource: _params['source'],
         );
+      case 'zakat':
+        return ZakatScreen(onNavigate: _navigate);
       default:
         return HomeScreen(onNavigate: _navigate);
     }
@@ -205,6 +208,7 @@ class _MainLayoutState extends State<MainLayout> {
           'salahCalendar',
           'salahGuide',
           'qibla',
+          'zakat',
         ].contains(_activeTab);
       case 'duaCategories':
         return ['duaCategories', 'duaList'].contains(_activeTab);
@@ -258,11 +262,7 @@ class _MainLayoutState extends State<MainLayout> {
                 switchOutCurve: Curves.easeInOutQuart,
                 transitionBuilder: (Widget child, Animation<double> animation) {
                   final isOut =
-                      (child.key as ValueKey).value.toString() !=
-                      (_activeTab +
-                          _params.entries
-                              .map((e) => e.value.toString())
-                              .join());
+                      (child.key as ValueKey).value.toString() != _activeTab;
 
                   // Slide offset logic
                   Offset begin;
@@ -288,10 +288,7 @@ class _MainLayoutState extends State<MainLayout> {
                   );
                 },
                 child: KeyedSubtree(
-                  key: ValueKey<String>(
-                    _activeTab +
-                        _params.entries.map((e) => e.value.toString()).join(),
-                  ),
+                  key: ValueKey<String>(_activeTab),
                   child: _renderScreen(),
                 ),
               ),
