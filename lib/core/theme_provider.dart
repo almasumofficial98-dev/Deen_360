@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'theme.dart';
 
 enum ThemePeriod { dawn, day, sunset, night }
@@ -7,14 +8,71 @@ class ThemeProvider extends ChangeNotifier {
   ThemePeriod _period = ThemePeriod.day;
   Color _primaryColor = AppTheme.primary;
   LinearGradient _activeGradient = AppGradients.primary;
+  
+  bool _isAutoMode = true;
+  int? _manualColorValue;
+
+  ThemeProvider() {
+    _loadSettings();
+  }
 
   ThemePeriod get period => _period;
   Color get primaryColor => _primaryColor;
   LinearGradient get activeGradient => _activeGradient;
+  bool get isAutoMode => _isAutoMode;
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    _isAutoMode = prefs.getBool('theme_auto_mode') ?? true;
+    _manualColorValue = prefs.getInt('theme_manual_color');
+    
+    if (!_isAutoMode && _manualColorValue != null) {
+      _applyManualColor(Color(_manualColorValue!));
+    }
+  }
 
   /// Update theme based on the current prayer block name from HomeScreen
   void updateFromPrayerBlock(String prayerName) {
+    if (!_isAutoMode) return;
     _updateThemeData(prayerName.toUpperCase());
+  }
+
+  Future<void> setAutoMode(bool value) async {
+    _isAutoMode = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('theme_auto_mode', value);
+    
+    if (value) {
+      notifyListeners();
+    } else if (_manualColorValue != null) {
+      _applyManualColor(Color(_manualColorValue!));
+    } else {
+      notifyListeners();
+    }
+  }
+
+  Future<void> setManualColor(Color color) async {
+    _isAutoMode = false;
+    _manualColorValue = color.value;
+    
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('theme_auto_mode', false);
+    await prefs.setInt('theme_manual_color', color.value);
+    
+    _applyManualColor(color);
+  }
+
+  void _applyManualColor(Color color) {
+    _primaryColor = color;
+    final hsl = HSLColor.fromColor(color);
+    final darker = hsl.withLightness((hsl.lightness - 0.1).clamp(0.0, 1.0)).toColor();
+    
+    _activeGradient = LinearGradient(
+      colors: [color, darker],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+    notifyListeners();
   }
 
   void _updateThemeData(String name) {

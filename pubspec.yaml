@@ -49,6 +49,7 @@ dependencies:
   intl: ^0.20.2
   scrollable_positioned_list: ^0.3.8
   google_fonts: ^6.2.1
+  confetti: ^0.8.0
 
 dev_dependencies:
   flutter_test:
@@ -107,5 +108,8 @@ flutter:
 flutter_launcher_icons:
   android: "ic_launcher"
   ios: true
-  image_path: "assets/icon/app_icon.png"
+  image_path: "assets/images/logo.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/icon/adaptive_foreground.png"
+  monochrome_android_icon: "assets/icon/monochrome_logo.png"
   min_sdk_android: 21

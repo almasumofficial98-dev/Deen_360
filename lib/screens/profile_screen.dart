@@ -2,10 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/theme.dart';
 import '../core/theme_provider.dart';
+import '../widgets/appearance_settings_sheet.dart';
 
 class ProfileScreen extends StatelessWidget {
   final Function(String, [Map<String, dynamic>?]) onNavigate;
   const ProfileScreen({super.key, required this.onNavigate});
+
+  void _showAppearanceSettings(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => const AppearanceSettingsSheet(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +56,7 @@ class ProfileScreen extends StatelessWidget {
                 children: [
                   _buildProfileItem(context, 'Settings', Icons.settings_rounded, () {}),
                   _buildProfileItem(context, 'Notifications', Icons.notifications_active_rounded, () {}),
+                  _buildProfileItem(context, 'App Appearance', Icons.palette_rounded, () => _showAppearanceSettings(context)),
                   _buildProfileItem(context, 'Location & Prayer Methods', Icons.location_on_rounded, () {}),
                   _buildProfileItem(context, 'Bookmarks', Icons.bookmark_rounded, () => onNavigate('bookmarks')),
                   _buildProfileItem(context, 'About Deen360', Icons.info_rounded, () {}),

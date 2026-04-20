@@ -22,6 +22,8 @@ import 'more_hub_screen.dart';
 import 'profile_screen.dart';
 import 'salah_calendar_screen.dart';
 import 'salah_guide_screen.dart';
+import 'quran_home_screen.dart';
+import 'juz_list_screen.dart';
 import 'post_studio_screen.dart';
 
 class _NavigationPoint {
@@ -41,13 +43,20 @@ class _MainLayoutState extends State<MainLayout> {
   String _activeTab = 'home';
   Map<String, dynamic> _params = {};
   final List<_NavigationPoint> _history = [];
+  bool _isBackNavigation = false;
 
   void _navigate(String target, [Map<String, dynamic>? payload]) {
+    if (target == 'pop') {
+      _pop();
+      return;
+    }
+
     if (_activeTab == target &&
         _params.toString() == (payload ?? {}).toString())
       return;
 
     setState(() {
+      _isBackNavigation = false;
       // Save current to history
       _history.add(_NavigationPoint(_activeTab, _params));
 
@@ -60,6 +69,7 @@ class _MainLayoutState extends State<MainLayout> {
     // If we are in Post Studio, always go straight home as requested
     if (_activeTab == 'postStudio') {
       setState(() {
+        _isBackNavigation = true;
         _history.clear();
         _activeTab = 'home';
         _params = {};
@@ -69,6 +79,7 @@ class _MainLayoutState extends State<MainLayout> {
 
     if (_history.isNotEmpty) {
       setState(() {
+        _isBackNavigation = true;
         final prev = _history.removeLast();
         _activeTab = prev.target;
         _params = prev.params;
@@ -78,6 +89,7 @@ class _MainLayoutState extends State<MainLayout> {
 
     if (_activeTab != 'home') {
       setState(() {
+        _isBackNavigation = true;
         _activeTab = 'home';
         _params = {};
       });
@@ -91,6 +103,7 @@ class _MainLayoutState extends State<MainLayout> {
     if (_activeTab == tabKey && _history.isEmpty) return;
 
     setState(() {
+      _isBackNavigation = false;
       // When clicking a tab, we clear history to treat it as a top-level jump
       _history.clear();
       _activeTab = tabKey;
@@ -102,12 +115,23 @@ class _MainLayoutState extends State<MainLayout> {
     switch (_activeTab) {
       case 'home':
         return HomeScreen(onNavigate: _navigate);
+      case 'quranHome':
+        return QuranHomeScreen(onNavigate: _navigate);
+      case 'juzList':
+        return JuzListScreen(onNavigate: _navigate);
       case 'surahList':
         return SurahListScreen(onNavigate: _navigate);
       case 'surahContent':
         return SurahScreen(
-          surahNumber: _params['number'] ?? 1,
+          id: _params['number'] ?? 1,
+          mode: ReadingMode.surah,
           initialAyah: _params['ayah'],
+          onNavigate: _navigate,
+        );
+      case 'juzContent':
+        return SurahScreen(
+          id: _params['number'] ?? 1,
+          mode: ReadingMode.juz,
           onNavigate: _navigate,
         );
       case 'hadiths':
@@ -158,11 +182,39 @@ class _MainLayoutState extends State<MainLayout> {
 
   bool _isTabActive(String tabKey) {
     if (_activeTab == tabKey) return true;
-    if (tabKey == 'surahList' && (_activeTab == 'surahContent')) return true;
-    if (tabKey == 'hadiths' &&
-        (_activeTab == 'hadithChapters' || _activeTab == 'hadithList'))
-      return true;
-    return false;
+
+    switch (tabKey) {
+      case 'reading':
+        return [
+          'reading',
+          'quranHome',
+          'surahList',
+          'juzList',
+          'surahContent',
+          'juzContent',
+          'hadiths',
+          'hadithChapters',
+          'hadithList',
+        ].contains(_activeTab);
+      case 'more':
+        return [
+          'more',
+          'asma',
+          'bookmarks',
+          'salah',
+          'salahCalendar',
+          'salahGuide',
+          'qibla',
+        ].contains(_activeTab);
+      case 'duaCategories':
+        return ['duaCategories', 'duaList'].contains(_activeTab);
+      case 'home':
+        return _activeTab == 'home';
+      case 'profile':
+        return _activeTab == 'profile';
+      default:
+        return false;
+    }
   }
 
   @override
@@ -173,8 +225,16 @@ class _MainLayoutState extends State<MainLayout> {
     final tabs = [
       {'key': 'home', 'label': 'Home', 'icon': Icons.home_rounded},
       {'key': 'more', 'label': 'More', 'icon': Icons.grid_view_rounded},
-      {'key': 'duaCategories', 'label': 'Dua', 'icon': Icons.pan_tool_alt_rounded},
-      {'key': 'reading', 'label': 'Reading', 'icon': Icons.auto_stories_rounded},
+      {
+        'key': 'duaCategories',
+        'label': 'Dua',
+        'icon': Icons.pan_tool_alt_rounded,
+      },
+      {
+        'key': 'reading',
+        'label': 'Reading',
+        'icon': Icons.auto_stories_rounded,
+      },
       {'key': 'profile', 'label': 'Profile', 'icon': Icons.person_rounded},
     ];
 
@@ -193,9 +253,39 @@ class _MainLayoutState extends State<MainLayout> {
             // Main Body
             Positioned.fill(
               child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
+                duration: const Duration(milliseconds: 400),
+                switchInCurve: Curves.easeInOutQuart,
+                switchOutCurve: Curves.easeInOutQuart,
                 transitionBuilder: (Widget child, Animation<double> animation) {
-                  return FadeTransition(opacity: animation, child: child);
+                  final isOut =
+                      (child.key as ValueKey).value.toString() !=
+                      (_activeTab +
+                          _params.entries
+                              .map((e) => e.value.toString())
+                              .join());
+
+                  // Slide offset logic
+                  Offset begin;
+                  if (_isBackNavigation) {
+                    begin = isOut
+                        ? const Offset(1.0, 0.0)
+                        : const Offset(-1.0, 0.0);
+                  } else {
+                    begin = isOut
+                        ? const Offset(-1.0, 0.0)
+                        : const Offset(1.0, 0.0);
+                  }
+
+                  return FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: begin,
+                        end: Offset.zero,
+                      ).animate(animation),
+                      child: child,
+                    ),
+                  );
                 },
                 child: KeyedSubtree(
                   key: ValueKey<String>(
@@ -238,7 +328,9 @@ class _MainLayoutState extends State<MainLayout> {
                               horizontal: isActive ? 14 : 8,
                             ),
                             decoration: BoxDecoration(
-                              color: isActive ? primaryColor : Colors.transparent,
+                              color: isActive
+                                  ? primaryColor
+                                  : Colors.transparent,
                               borderRadius: BorderRadius.circular(24),
                             ),
                             child: Row(

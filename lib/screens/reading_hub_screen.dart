@@ -51,7 +51,7 @@ class ReadingHubScreen extends StatelessWidget {
                     subtitle: 'The Noble Word of Allah',
                     icon: Icons.menu_book_rounded,
                     gradient: theme.activeGradient,
-                    onTap: () => onNavigate('surahList'),
+                    onTap: () => onNavigate('quranHome'),
                     isHero: true,
                   ),
                   const SizedBox(height: 20),

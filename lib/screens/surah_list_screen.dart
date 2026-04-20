@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/theme.dart';
 import '../core/theme_provider.dart';
+import '../data/quran_repository.dart';
 import '../data/quran_download_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -43,24 +43,25 @@ class _SurahListScreenState extends State<SurahListScreen> {
 
   Future<void> _fetchData() async {
     setState(() => _loading = true);
-    try {
-      final url = Uri.parse('https://api.quran.com/api/v4/chapters?language=en');
-      final res = await http.get(url);
-      if (res.statusCode == 200) {
-        final json = jsonDecode(res.body);
-        final chapters = (json['chapters'] as List?) ?? [];
-        final surahs = chapters.map((s) => SurahInfo(
-          number: s['id'],
-          englishName: s['name_simple'] ?? s['translated_name']?['name'] ?? 'Surah ${s["id"]}',
-          name: s['name_arabic'] ?? '',
-          revelationType: s['revelation_place'] ?? 'makkah',
-          versesCount: s['verses_count'] ?? 0,
-        )).toList();
-        if (mounted) setState(() { _list = surahs; _filteredList = surahs; _loading = false; });
-      } else {
-        _useFallback();
+    final repo = context.read<QuranRepository>();
+    final data = await repo.getSurahList();
+    
+    if (data.isNotEmpty) {
+      final surahs = data.map((s) => SurahInfo(
+        number: s['number'],
+        englishName: s['englishName'],
+        name: s['name'],
+        revelationType: s['revelationType'],
+        versesCount: s['versesCount'],
+      )).toList();
+      if (mounted) {
+        setState(() {
+          _list = surahs;
+          _filteredList = surahs;
+          _loading = false;
+        });
       }
-    } catch (_) {
+    } else {
       _useFallback();
     }
   }
@@ -183,7 +184,16 @@ class _SurahListScreenState extends State<SurahListScreen> {
                     ],
                   ),
                 ),
-                if (!downloader.isDownloading)
+                if (downloader.isDownloading)
+                  GestureDetector(
+                    onTap: () => downloader.cancelDownload(),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      decoration: BoxDecoration(color: AppTheme.error.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+                      child: Text('Pause', style: TextStyle(color: AppTheme.error, fontSize: 13, fontWeight: FontWeight.w900)),
+                    ),
+                  )
+                else if (downloader.downloadedCount < 114)
                   GestureDetector(
                     onTap: () => downloader.downloadAll(),
                     child: Container(
@@ -191,12 +201,14 @@ class _SurahListScreenState extends State<SurahListScreen> {
                       decoration: BoxDecoration(color: theme.primaryColor, borderRadius: BorderRadius.circular(12)),
                       child: const Text('Download All', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900)),
                     ),
-                  )
-                else
-                  SizedBox(
-                    width: 24, height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 3, value: downloader.progress, color: theme.primaryColor, backgroundColor: theme.primaryColor.withValues(alpha: 0.2)),
                   ),
+                if (downloader.isDownloading) ...[
+                  const SizedBox(width: 12),
+                  SizedBox(
+                    width: 20, height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, value: downloader.progress, color: theme.primaryColor),
+                  ),
+                ],
               ],
             ),
             if (downloader.isDownloading) ...[

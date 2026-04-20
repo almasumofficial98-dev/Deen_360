@@ -11,6 +11,7 @@ import '../core/theme.dart';
 import '../core/theme_provider.dart';
 import '../data/quran_repository.dart';
 import '../data/hadith_repository.dart';
+import '../data/surah_data.dart';
 
 class PostStudioScreen extends StatefulWidget {
   final Function(String, [Map<String, dynamic>?]) onNavigate;
@@ -35,6 +36,7 @@ class _PostStudioScreenState extends State<PostStudioScreen> {
   late String _inputSource;
 
   double _fontSize = 24.0;
+  double _baseFontSize = 24.0;
   TextAlign _textAlign = TextAlign.center;
   double _overlayOpacity = 0.4;
   Color _textColor = Colors.white;
@@ -248,51 +250,151 @@ class _PostStudioScreenState extends State<PostStudioScreen> {
 
   Future<void> _showQuranPicker() async {
     final qRepo = context.read<QuranRepository>();
-    final surah = await showModalBottomSheet<Map<String, dynamic>>(
+
+    // Step 0: Select Language
+    final langMap = {
+      'English': 'en',
+      'Urdu (اردو)': 'ur',
+      'Hindi (हिन्दी)': 'hi',
+      'Bengali (বাংলা)': 'bn',
+    };
+
+    final langDisplay = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => _buildPickerModal(
-        title: 'Select Surah',
-        items: List.generate(
-          114,
-          (i) => {'index': i + 1, 'name': 'Surah ${i + 1}'},
+        title: 'Select Language',
+        items: langMap.keys.toList(),
+        itemBuilder: (l) => ListTile(
+          title: Text(l, style: const TextStyle(fontWeight: FontWeight.bold)),
+          onTap: () => Navigator.pop(ctx, l),
         ),
-        itemBuilder: (item) => ListTile(
+      ),
+    );
+    if (langDisplay == null) return;
+    final selectedLang = langMap[langDisplay]!;
+
+    // Step 1: Select Surah
+    final surah = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _buildPickerModal(
+        title: 'Select Surah',
+        items: SurahData.surahs,
+        itemBuilder: (s) => ListTile(
           title: Text(
-            item['name'],
+            "${s['id']}. ${s['name']}",
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
-          onTap: () => Navigator.pop(ctx, item),
+          trailing: Text(
+            s['ar'],
+            style: const TextStyle(
+              fontSize: 18,
+              fontFamily: 'Regular', // Standard Arabic font
+            ),
+          ),
+          onTap: () => Navigator.pop(ctx, s),
         ),
       ),
     );
     if (surah == null) return;
+
+    // Step 2: Select Ayah
     setState(() => _isLoadingContent = true);
     try {
-      final verses = await qRepo.loadSurah(surah['index']);
+      final verses = await qRepo.loadSurah(surah['id'], language: selectedLang);
       if (!mounted) return;
       setState(() => _isLoadingContent = false);
+
       final v = await showModalBottomSheet<Verse>(
         context: context,
+        isScrollControlled: true,
         backgroundColor: Colors.transparent,
         builder: (ctx) => _buildPickerModal(
           title: 'Select Ayah',
           items: verses,
-          itemBuilder: (v) => ListTile(
-            title: Text(v.en, maxLines: 2, overflow: TextOverflow.ellipsis),
-            subtitle: Text(
-              'Ayah ${v.ayah}',
-              style: const TextStyle(fontWeight: FontWeight.w800),
-            ),
+          itemBuilder: (v) => InkWell(
             onTap: () => Navigator.pop(ctx, v),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Ayah ${v.id}',
+                        style: const TextStyle(
+                          color: AppTheme.textMuted,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      v.ar,
+                      textAlign: TextAlign.right,
+                      style: const TextStyle(
+                        fontFamily: 'Regular',
+                        fontSize: 22,
+                        color: AppTheme.text,
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    v.translation,
+                    style: const TextStyle(
+                      color: AppTheme.textLight,
+                      fontSize: 14,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       );
-      if (v != null)
+      if (v == null) return;
+
+      // Step 3: Select Translation Mode
+      if (!mounted) return;
+      final mode = await showModalBottomSheet<String>(
+        context: context,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) => _buildPickerModal(
+          title: 'Display Mode',
+          items: ['Translation Only', 'Arabic Only', 'Both (Arabic + Translation)'],
+          itemBuilder: (m) => ListTile(
+            title: Text(m, style: const TextStyle(fontWeight: FontWeight.bold)),
+            onTap: () => Navigator.pop(ctx, m),
+          ),
+        ),
+      );
+
+      if (mode != null) {
+        final attribution = qRepo.getAttribution(selectedLang);
         setState(() {
-          _inputText = v.en;
-          _inputSource = "Surah ${surah['index']}:${v.ayah}";
+          if (mode.contains('Both')) {
+            _inputText = "${v.ar}\n\n${v.translation}";
+          } else if (mode.contains('Arabic')) {
+            _inputText = v.ar;
+          } else {
+            _inputText = v.translation;
+          }
+          // Include attribution in the source/reference field
+          _inputSource = "${surah['name']} • Ayah ${v.ayahNumber}\n$attribution";
         });
+      }
     } catch (_) {
       setState(() => _isLoadingContent = false);
     }
@@ -300,6 +402,8 @@ class _PostStudioScreenState extends State<PostStudioScreen> {
 
   Future<void> _showHadithPicker() async {
     final hRepo = context.read<HadithRepository>();
+
+    // Step 1: Select Collection
     final col = await showModalBottomSheet<HadithCollection>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -316,18 +420,68 @@ class _PostStudioScreenState extends State<PostStudioScreen> {
       ),
     );
     if (col == null) return;
+
+    // Step 2: Select Chapter
     setState(() => _isLoadingContent = true);
     try {
       final caps = await hRepo.loadHadithChapters(col.id);
-      final cap = caps[Random().nextInt(caps.length)];
+      if (!mounted) return;
+      setState(() => _isLoadingContent = false);
+
+      final cap = await showModalBottomSheet<HadithChapter>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) => _buildPickerModal(
+          title: 'Select Chapter',
+          items: caps,
+          itemBuilder: (c) => ListTile(
+            title: Text(
+              c.title,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Text('Chapter ${c.id}'),
+            onTap: () => Navigator.pop(ctx, c),
+          ),
+        ),
+      );
+      if (cap == null) return;
+
+      // Step 3: Select Hadith
+      setState(() => _isLoadingContent = true);
       final hadiths = await hRepo.loadHadiths(col.id, cap.id);
       if (!mounted) return;
       setState(() => _isLoadingContent = false);
-      if (hadiths.isNotEmpty) {
-        final h = hadiths[Random().nextInt(hadiths.length)];
+
+      if (hadiths.isEmpty) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('No hadiths found in this chapter.')));
+        return;
+      }
+
+      final h = await showModalBottomSheet<HadithItem>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) => _buildPickerModal(
+          title: 'Select Hadith',
+          items: hadiths,
+          itemBuilder: (item) => ListTile(
+            title: Text(item.en, maxLines: 3, overflow: TextOverflow.ellipsis),
+            subtitle: Text(
+              "Hadith #${item.id}",
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+            onTap: () => Navigator.pop(ctx, item),
+          ),
+        ),
+      );
+
+      if (h != null) {
         setState(() {
           _inputText = h.en;
-          _inputSource = "${col.title} - ${cap.title}";
+          _inputSource = "${h.book}\nChapter: ${h.chapterName}";
         });
       }
     } catch (_) {
@@ -341,37 +495,49 @@ class _PostStudioScreenState extends State<PostStudioScreen> {
     required Widget Function(dynamic) itemBuilder,
   }) {
     return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.symmetric(vertical: 24),
+      height: MediaQuery.of(context).size.height * 0.8,
+      margin: const EdgeInsets.fromLTRB(12, 60, 12, 12),
       decoration: BoxDecoration(
         color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(32),
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
+          const SizedBox(height: 12),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppTheme.inputBg,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.fromLTRB(28, 20, 20, 10),
             child: Row(
               children: [
                 Text(
                   title,
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 20,
                     fontWeight: FontWeight.w900,
                     color: AppTheme.text,
                   ),
                 ),
                 const Spacer(),
-                const Icon(Icons.keyboard_arrow_down_rounded),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close_rounded, color: AppTheme.textMuted),
+                ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          Flexible(
-            child: ListView.builder(
-              shrinkWrap: true,
+          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+          Expanded(
+            child: ListView.separated(
+              padding: const EdgeInsets.only(bottom: 40),
               itemCount: items.length,
+              separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
               itemBuilder: (ctx, idx) => itemBuilder(items[idx]),
             ),
           ),
@@ -395,8 +561,17 @@ class _PostStudioScreenState extends State<PostStudioScreen> {
         body: Stack(
           children: [
             Center(
-              child: RepaintBoundary(
-                key: _boundaryKey,
+              child: GestureDetector(
+                onScaleStart: (details) {
+                  _baseFontSize = _fontSize;
+                },
+                onScaleUpdate: (details) {
+                  setState(() {
+                    _fontSize = (_baseFontSize * details.scale).clamp(10.0, 80.0);
+                  });
+                },
+                child: RepaintBoundary(
+                  key: _boundaryKey,
                 child: AspectRatio(
                   aspectRatio: 9 / 16,
                   child: Container(
@@ -421,48 +596,63 @@ class _PostStudioScreenState extends State<PostStudioScreen> {
                         ),
                       ),
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(
-                            Icons.format_quote_rounded,
-                            color: Colors.white70,
-                            size: 40,
-                          ),
-                          const SizedBox(height: 20),
-                          Text(
-                            _inputText,
-                            textAlign: _textAlign,
-                            style: TextStyle(
-                              color: _textColor,
-                              fontSize: _fontSize,
-                              fontWeight: FontWeight.w800,
-                              height: 1.4,
-                              shadows: [
-                                Shadow(
-                                  color: Colors.black.withValues(alpha: 0.5),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
+                          Expanded(
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.center,
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth: MediaQuery.of(context).size.width - 80,
                                 ),
-                              ],
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(
+                                      Icons.format_quote_rounded,
+                                      color: Colors.white70,
+                                      size: 40,
+                                    ),
+                                    const SizedBox(height: 20),
+                                    Text(
+                                      _inputText,
+                                      textAlign: _textAlign,
+                                      style: TextStyle(
+                                        color: _textColor,
+                                        fontSize: _fontSize,
+                                        fontWeight: FontWeight.w800,
+                                        height: 1.4,
+                                        shadows: [
+                                          Shadow(
+                                            color: Colors.black.withValues(alpha: 0.5),
+                                            blurRadius: 10,
+                                            offset: const Offset(0, 4),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 24),
+                                    Container(
+                                      width: 40,
+                                      height: 2,
+                                      color: Colors.white38,
+                                    ),
+                                    const SizedBox(height: 24),
+                                    Text(
+                                      _inputSource.toUpperCase(),
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: 2,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 24),
-                          Container(
-                            width: 40,
-                            height: 2,
-                            color: Colors.white38,
-                          ),
-                          const SizedBox(height: 24),
-                          Text(
-                            _inputSource.toUpperCase(),
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 2,
-                            ),
-                          ),
-                          const SizedBox(height: 60),
+                          const SizedBox(height: 30),
                           Opacity(
                             opacity: 0.6,
                             child: Container(
@@ -493,6 +683,7 @@ class _PostStudioScreenState extends State<PostStudioScreen> {
                   ),
                 ),
               ),
+            ),
             ),
 
             SafeArea(
@@ -597,7 +788,52 @@ class _PostStudioScreenState extends State<PostStudioScreen> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.format_size_rounded,
+                              size: 16,
+                              color: AppTheme.textMuted,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: SliderTheme(
+                                data: SliderTheme.of(context).copyWith(
+                                  trackHeight: 2,
+                                  thumbShape: const RoundSliderThumbShape(
+                                    enabledThumbRadius: 6,
+                                  ),
+                                  overlayShape: const RoundSliderOverlayShape(
+                                    overlayRadius: 14,
+                                  ),
+                                  activeTrackColor: primaryColor,
+                                  inactiveTrackColor: AppTheme.inputBg,
+                                  thumbColor: primaryColor,
+                                  overlayColor: primaryColor.withValues(
+                                    alpha: 0.1,
+                                  ),
+                                ),
+                                child: Slider(
+                                  value: _fontSize,
+                                  min: 10,
+                                  max: 80,
+                                  onChanged: (v) => setState(() => _fontSize = v),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              _fontSize.toInt().toString(),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w900,
+                                color: AppTheme.textMuted,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
                         Row(
                           children: [
                             Expanded(

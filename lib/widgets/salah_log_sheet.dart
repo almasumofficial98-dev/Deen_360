@@ -7,11 +7,15 @@ import '../data/salah_tracker_provider.dart';
 class SalahLogSheet extends StatefulWidget {
   final DateTime date;
   final String prayerName;
+  final Function(String, [Map<String, dynamic>?]) onNavigate;
+  final VoidCallback? onCelebration;
 
   const SalahLogSheet({
     super.key,
     required this.date,
     required this.prayerName,
+    required this.onNavigate,
+    this.onCelebration,
   });
 
   @override
@@ -78,10 +82,11 @@ class _SalahLogSheetState extends State<SalahLogSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _sectionTitle('SUNNAH & OPTIONAL'),
+              Expanded(child: _sectionTitle('SUNNAH & OPTIONAL')),
               GestureDetector(
                 onTap: () {
-                  // Navigate to guide inside bottom sheet might be tricky, let's just pop and navigate or show guide button
+                  Navigator.pop(context); // Close bottom sheet
+                  widget.onNavigate('salahGuide');
                 },
                 child: Text('View evidence-based guide', style: TextStyle(color: primaryColor, fontSize: 11, fontWeight: FontWeight.w900)),
               ),
@@ -107,6 +112,14 @@ class _SalahLogSheetState extends State<SalahLogSheet> {
                     witr: _witr
                   ),
                 );
+
+                // Trigger celebration
+                if (_status == SalahStatus.alone || 
+                    _status == SalahStatus.jamaat || 
+                    _status == SalahStatus.qaza) {
+                  widget.onCelebration?.call();
+                }
+
                 Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(

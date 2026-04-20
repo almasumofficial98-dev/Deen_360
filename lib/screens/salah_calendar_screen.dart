@@ -76,9 +76,25 @@ class _SalahCalendarScreenState extends State<SalahCalendarScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('SALAH HISTORY', style: TextStyle(color: AppTheme.textMuted, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 2)),
+                Text(
+                  'SALAH HISTORY',
+                  style: TextStyle(
+                    color: AppTheme.textMuted,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 2,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text('Prayer Calendar', style: TextStyle(color: AppTheme.text, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+                Text(
+                  'Prayer Calendar',
+                  style: TextStyle(
+                    color: AppTheme.text,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.5,
+                  ),
+                ),
               ],
             ),
           ),
@@ -86,7 +102,10 @@ class _SalahCalendarScreenState extends State<SalahCalendarScreen> {
             onTap: () => widget.onNavigate('salahGuide'),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(color: primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(
+                color: primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Icon(Icons.info_outline_rounded, color: primary, size: 20),
             ),
           ),
@@ -97,7 +116,7 @@ class _SalahCalendarScreenState extends State<SalahCalendarScreen> {
 
   Widget _buildCalendar(SalahTrackerProvider tracker, Color primary) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
+      margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(32),
@@ -105,6 +124,8 @@ class _SalahCalendarScreenState extends State<SalahCalendarScreen> {
         border: Border.all(color: const Color(0xFFF1F5F9)),
       ),
       child: TableCalendar(
+        rowHeight: 64,
+        daysOfWeekHeight: 30,
         firstDay: tracker.installDate,
         lastDay: DateTime.now().add(const Duration(days: 365)),
         focusedDay: _focusedDay,
@@ -124,11 +145,23 @@ class _SalahCalendarScreenState extends State<SalahCalendarScreen> {
           return count > 0 ? List.generate(count, (index) => 'done') : [];
         },
         calendarStyle: CalendarStyle(
-          todayDecoration: BoxDecoration(color: primary.withValues(alpha: 0.2), shape: BoxShape.circle),
-          selectedDecoration: BoxDecoration(color: primary, shape: BoxShape.circle),
-          todayTextStyle: TextStyle(color: primary, fontWeight: FontWeight.bold),
+          todayDecoration: BoxDecoration(
+            color: primary.withValues(alpha: 0.2),
+            shape: BoxShape.circle,
+          ),
+          selectedDecoration: BoxDecoration(
+            color: primary,
+            shape: BoxShape.circle,
+          ),
+          todayTextStyle: TextStyle(
+            color: primary,
+            fontWeight: FontWeight.bold,
+          ),
           markersMaxCount: 5,
-          markerDecoration: BoxDecoration(color: primary, shape: BoxShape.circle),
+          markerDecoration: BoxDecoration(
+            color: primary,
+            shape: BoxShape.circle,
+          ),
         ),
         headerStyle: HeaderStyle(
           formatButtonVisible: true,
@@ -137,7 +170,10 @@ class _SalahCalendarScreenState extends State<SalahCalendarScreen> {
             color: primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
-          formatButtonTextStyle: TextStyle(color: primary, fontWeight: FontWeight.bold),
+          formatButtonTextStyle: TextStyle(
+            color: primary,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );
@@ -157,9 +193,22 @@ class _SalahCalendarScreenState extends State<SalahCalendarScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(dateStr, style: const TextStyle(color: AppTheme.text, fontSize: 18, fontWeight: FontWeight.w900)),
-              Text('${tracker.getCompletedCount(_selectedDay!)}/5 Done', 
-                style: TextStyle(color: primary, fontSize: 14, fontWeight: FontWeight.w800)),
+              Text(
+                dateStr,
+                style: const TextStyle(
+                  color: AppTheme.text,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              Text(
+                '${tracker.getCompletedCount(_selectedDay!)}/5 Done',
+                style: TextStyle(
+                  color: primary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -169,9 +218,13 @@ class _SalahCalendarScreenState extends State<SalahCalendarScreen> {
     );
   }
 
-  Widget _buildPrayerItem(String name, SalahTrackerProvider tracker, Color primary) {
+  Widget _buildPrayerItem(
+    String name,
+    SalahTrackerProvider tracker,
+    Color primary,
+  ) {
     final entry = tracker.getEntry(_selectedDay!, name);
-    
+
     IconData statusIcon = Icons.circle_outlined;
     Color statusColor = AppTheme.textMuted;
     String statusLabel = 'Not Logged';
@@ -211,14 +264,22 @@ class _SalahCalendarScreenState extends State<SalahCalendarScreen> {
             context: context,
             isScrollControlled: true,
             backgroundColor: Colors.transparent,
-            builder: (_) => SalahLogSheet(date: _selectedDay!, prayerName: name),
+            builder: (_) => SalahLogSheet(
+              date: _selectedDay!,
+              prayerName: name,
+              onNavigate: widget.onNavigate,
+            ),
           );
         },
         child: Row(
           children: [
             Container(
-              width: 44, height: 44,
-              decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: statusColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Icon(statusIcon, color: statusColor, size: 22),
             ),
             const SizedBox(width: 16),
@@ -226,8 +287,22 @@ class _SalahCalendarScreenState extends State<SalahCalendarScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(name, style: const TextStyle(color: AppTheme.text, fontSize: 16, fontWeight: FontWeight.w800)),
-                  Text(statusLabel, style: TextStyle(color: statusColor, fontSize: 13, fontWeight: FontWeight.bold)),
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      color: AppTheme.text,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  Text(
+                    statusLabel,
+                    style: TextStyle(
+                      color: statusColor,
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -243,10 +318,20 @@ class _SalahCalendarScreenState extends State<SalahCalendarScreen> {
   Widget _buildDetailTags(SalahEntry entry, Color primary) {
     return Row(
       children: [
-        if (entry.sunnahBefore > 0) _buildMiniTag('${entry.sunnahBefore}B', Colors.amber),
-        if (entry.sunnahAfter > 0) ...[const SizedBox(width: 4), _buildMiniTag('${entry.sunnahAfter}A', Colors.orange)],
-        if (entry.witr > 0) ...[const SizedBox(width: 4), _buildMiniTag('Witr', Colors.indigo)],
-        if (entry.nafl > 0) ...[const SizedBox(width: 4), _buildMiniTag('N', Colors.purple)],
+        if (entry.sunnahBefore > 0)
+          _buildMiniTag('${entry.sunnahBefore}B', Colors.amber),
+        if (entry.sunnahAfter > 0) ...[
+          const SizedBox(width: 4),
+          _buildMiniTag('${entry.sunnahAfter}A', Colors.orange),
+        ],
+        if (entry.witr > 0) ...[
+          const SizedBox(width: 4),
+          _buildMiniTag('Witr', Colors.indigo),
+        ],
+        if (entry.nafl > 0) ...[
+          const SizedBox(width: 4),
+          _buildMiniTag('N', Colors.purple),
+        ],
       ],
     );
   }
@@ -254,8 +339,18 @@ class _SalahCalendarScreenState extends State<SalahCalendarScreen> {
   Widget _buildMiniTag(String label, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
-      child: Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 }

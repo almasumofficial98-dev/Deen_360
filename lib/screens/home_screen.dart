@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:confetti/confetti.dart';
 import '../core/theme.dart';
 import '../core/theme_provider.dart';
 import '../data/salah_repository.dart';
@@ -42,12 +43,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   String _nextTime = '--';
 
   Timer? _clockTimer;
+  late ConfettiController _confettiController;
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
+    _confettiController = ConfettiController(
+      duration: const Duration(seconds: 2),
+    );
     _fadeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
@@ -64,8 +69,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   @override
   void dispose() {
     _clockTimer?.cancel();
+    _confettiController.dispose();
     _fadeController.dispose();
     super.dispose();
+  }
+
+  void _playCelebration() {
+    _confettiController.play();
   }
 
   // ─────────────────────────────────────────
@@ -79,12 +89,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _loadLastBookmark();
 
     final saved = await salahRepo.getUserLocation();
-    
+
     // If we have a saved location and it's not a forced GPS reset, use it
     if (saved != null && !forceGPS) {
       if (mounted) setState(() => _locationName = saved.city ?? 'Saved');
       _fetchTimingsAndWeather(saved.latitude, saved.longitude);
-      
+
       // Still refresh GPS in background if it's not a manual selection
       if (!saved.isManual) {
         _fetchGPSInBackground(salahRepo, saved);
@@ -136,15 +146,17 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         final data = jsonDecode(res.body);
         final cw = data['current_weather'] ?? data['current'];
         if (cw != null) {
-          final temp = (cw['temperature'] ?? cw['temperature_2m'] as num).round();
-          final code = (cw['weathercode'] ?? cw['weather_code'] as num?)?.toInt() ?? 0;
+          final temp = (cw['temperature'] ?? cw['temperature_2m'] as num)
+              .round();
+          final code =
+              (cw['weathercode'] ?? cw['weather_code'] as num?)?.toInt() ?? 0;
           IconData icon = Icons.wb_sunny_rounded;
-          if (code == 0 || code == 1) {
-            icon = Icons.wb_sunny_rounded;
-          } else if (code == 2) {
-            icon = Icons.wb_cloudy_rounded;
+          if (code == 0) {
+            icon = Icons.wb_sunny_rounded; // Sun
+          } else if (code <= 2) {
+            icon = Icons.wb_cloudy_rounded; // Partly cloudy (Cloudy Sun)
           } else if (code == 3) {
-            icon = Icons.cloud_rounded;
+            icon = Icons.cloud_rounded; // Overcast (Cloudy)
           } else if (code <= 48) {
             icon = Icons.blur_on_rounded; // Fog
           } else if (code <= 55) {
@@ -154,7 +166,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           } else if (code <= 77 || (code >= 85 && code <= 86)) {
             icon = Icons.ac_unit_rounded; // Snow
           } else if (code >= 95) {
-            icon = Icons.thunderstorm_rounded;
+            icon = Icons.thunderstorm_rounded; // Thunder
           }
 
           setState(() {
@@ -294,7 +306,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     final blocks = <_PrayerBlock>[
       _PrayerBlock(
         'FAJR',
-        'Fajr Salah',
+        'Salah Time',
         fajr,
         sunrise,
         'Sunrise',
@@ -310,18 +322,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         _fmt12(dhuhr),
         false,
       ),
-      _PrayerBlock(
-        'DHUHR',
-        'Dhuhr Salah',
-        dhuhr,
-        asr,
-        'Asr',
-        _fmt12(asr),
-        true,
-      ),
+      _PrayerBlock('DHUHR', 'Salah Time', dhuhr, asr, 'Asr', _fmt12(asr), true),
       _PrayerBlock(
         'ASR',
-        'Asr Salah',
+        'Salah Time',
         asr,
         sunset,
         'Maghrib',
@@ -330,7 +334,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
       _PrayerBlock(
         'MAGHRIB',
-        'Maghrib Salah',
+        'Salah Time',
         maghrib,
         isha,
         'Isha',
@@ -339,7 +343,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
       _PrayerBlock(
         'ISHA',
-        'Isha Salah',
+        'Salah Time',
         isha,
         midnight,
         'Midnight',
@@ -397,13 +401,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         _currentStart = start;
         _currentEnd = end;
         _nextTime = nextTime;
-        _timeRemaining = diff.inSeconds <= 0
-            ? '00:00:00'
-            : '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+        _timeRemaining = _formatRemaining(diff);
       });
       if (name != '--') {
         context.read<ThemeProvider>().updateFromPrayerBlock(name);
       }
+    }
+  }
+
+  String _formatRemaining(Duration diff) {
+    if (diff.inSeconds <= 0) return '0 min';
+    final h = diff.inHours;
+    final m = diff.inMinutes % 60;
+
+    if (h > 0) {
+      return '$h hr $m min';
+    } else {
+      return '$m min';
     }
   }
 
@@ -423,28 +437,52 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       backgroundColor: AppTheme.background,
       body: FadeTransition(
         opacity: _fadeAnimation,
-        child: RefreshIndicator(
-          onRefresh: () async {
-            await _initData();
-          },
-          color: context.read<ThemeProvider>().primaryColor,
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(
-              parent: BouncingScrollPhysics(),
+        child: Stack(
+          children: [
+            RefreshIndicator(
+              onRefresh: () async {
+                await _initData();
+              },
+              color: context.read<ThemeProvider>().primaryColor,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(
+                  parent: BouncingScrollPhysics(),
+                ),
+                padding: EdgeInsets.only(
+                  top: MediaQuery.of(context).padding.top,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 8),
+                    _buildZenHUD(),
+                    if (_lastBookmark != null) _buildContinueReading(context),
+                    _buildDailyTracker(context),
+                    _buildPostStudioCard(context),
+                    const SizedBox(height: 120),
+                  ],
+                ),
+              ),
             ),
-            padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 8),
-                _buildZenHUD(),
-                if (_lastBookmark != null) _buildContinueReading(context),
-                _buildDailyTracker(context),
-                _buildPostStudioCard(context),
-                const SizedBox(height: 120),
-              ],
+            Align(
+              alignment: Alignment.topCenter,
+              child: ConfettiWidget(
+                confettiController: _confettiController,
+                blastDirectionality: BlastDirectionality.explosive,
+                shouldLoop: false,
+                colors: [
+                  context.read<ThemeProvider>().primaryColor,
+                  const Color(0xFF2563EB),
+                  const Color(0xFFD97706),
+                  const Color(0xFFDB2777),
+                ],
+                minimumSize: const Size(10, 10),
+                maximumSize: const Size(20, 20),
+                numberOfParticles: 20,
+                gravity: 0.2,
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -738,18 +776,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: secondaryBgColor,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: foregroundColor.withValues(alpha: 0.1),
-                    ),
-                  ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
                   child: Row(
                     children: [
                       Icon(_weatherIcon, size: 14, color: foregroundColor),
@@ -846,7 +874,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             Row(
               children: [
                 _buildStatItem(
-                  'Started',
+                  '$_currentPrayerName Started At',
                   _currentStart,
                   foregroundColor,
                   mutedForegroundColor,
@@ -857,18 +885,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   color: foregroundColor.withValues(alpha: 0.15),
                 ),
                 _buildStatItem(
-                  'Ending',
-                  _currentEnd,
-                  foregroundColor,
-                  mutedForegroundColor,
-                ),
-                Container(
-                  width: 1,
-                  height: 30,
-                  color: foregroundColor.withValues(alpha: 0.15),
-                ),
-                _buildStatItem(
-                  '$_nextPrayerName at',
+                  '$_nextPrayerName Starts At',
                   _nextTime,
                   foregroundColor,
                   mutedForegroundColor,
@@ -1020,8 +1037,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       context: context,
                       isScrollControlled: true,
                       backgroundColor: Colors.transparent,
-                      builder: (_) =>
-                          SalahLogSheet(date: DateTime.now(), prayerName: p),
+                      builder: (_) => SalahLogSheet(
+                        date: DateTime.now(),
+                        prayerName: p,
+                        onNavigate: widget.onNavigate,
+                        onCelebration: _playCelebration,
+                      ),
                     );
                   },
                   child: Column(
