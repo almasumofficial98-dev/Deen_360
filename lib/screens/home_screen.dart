@@ -12,6 +12,7 @@ import '../data/salah_repository.dart';
 import '../data/salah_tracker_provider.dart';
 import '../widgets/salah_log_sheet.dart';
 import '../widgets/location_search_sheet.dart';
+import '../widgets/weather_animation_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(String, [Map<String, dynamic>?]) onNavigate;
@@ -25,6 +26,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   // Location & Weather
   String _locationName = 'Loading...';
   int? _temperature;
+  int _weatherCode = 0;
   IconData _weatherIcon = Icons.wb_sunny_rounded;
 
   // Prayer data from Aladhan
@@ -173,6 +175,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           setState(() {
             _temperature = temp;
             _weatherIcon = icon;
+            _weatherCode = code;
           });
         }
       }
@@ -724,24 +727,28 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ? Colors.white.withValues(alpha: 0.7)
         : AppTheme.textMuted;
     final secondaryBgColor = isLight
-        ? Colors.white.withValues(alpha: 0.2)
-        : AppTheme.text.withValues(alpha: 0.08);
+        ? Colors.white.withValues(alpha: 0.35)
+        : AppTheme.text.withValues(alpha: 0.18);
 
-    return GestureDetector(
-      onTap: () => widget.onNavigate('salah'),
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(20, 0, 20, 40),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-        decoration: BoxDecoration(
-          gradient: gradient,
-          borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: foregroundColor.withValues(alpha: 0.15)),
-          boxShadow: AppShadows.dynamicFloating(
-            isLight
-                ? context.watch<ThemeProvider>().primaryColor
-                : Colors.black,
-          ),
-        ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
+      child: WeatherAnimationWidget(
+        weatherCode: _weatherCode,
+        tintColor: foregroundColor,
+        child: GestureDetector(
+          onTap: () => widget.onNavigate('salah'),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            decoration: BoxDecoration(
+              gradient: gradient,
+              borderRadius: BorderRadius.circular(32),
+              border: Border.all(color: foregroundColor.withValues(alpha: 0.15)),
+              boxShadow: AppShadows.dynamicFloating(
+                isLight
+                    ? context.watch<ThemeProvider>().primaryColor
+                    : Colors.black,
+              ),
+            ),
         child: Column(
           children: [
             // 1. Status Header
@@ -759,7 +766,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       color: secondaryBgColor,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: foregroundColor.withValues(alpha: 0.1),
+                        color: foregroundColor.withValues(alpha: 0.25),
                       ),
                     ),
                     child: Row(
@@ -793,7 +800,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     color: secondaryBgColor,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: foregroundColor.withValues(alpha: 0.1),
+                      color: foregroundColor.withValues(alpha: 0.25),
                     ),
                   ),
                   child: Row(
@@ -912,8 +919,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ],
         ),
       ),
-    );
-  }
+    ),
+  ),
+);
+}
 
   Widget _buildStatItem(
     String label,

@@ -713,6 +713,7 @@ class _SurahScreenState extends State<SurahScreen> {
   }
 
   Widget _buildBismillahHero() {
+    final isSurah9 = widget.mode == ReadingMode.surah && widget.id == 9;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
       child: Container(
@@ -730,21 +731,23 @@ class _SurahScreenState extends State<SurahScreen> {
               Text(
                 _arabicName,
                 style: AppTypography.arabic(
-                  color: Colors.white.withOpacity(0.5),
-                  fontSize: 16,
+                  color: Colors.white.withOpacity(isSurah9 ? 0.95 : 0.6),
+                  fontSize: isSurah9 ? 28 : 16,
                   fontWeight: FontWeight.w800,
                 ),
+                textAlign: TextAlign.center,
               ),
-            if (_arabicName.isNotEmpty) const SizedBox(height: 8),
-            Text(
-              'بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ',
-              style: AppTypography.arabic(
-                color: Colors.white,
-                fontSize: 26,
-                fontWeight: FontWeight.w800,
-              ).copyWith(height: 1.8),
-              textAlign: TextAlign.center,
-            ),
+            if (_arabicName.isNotEmpty && !isSurah9) const SizedBox(height: 8),
+            if (!isSurah9)
+              Text(
+                'بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ',
+                style: AppTypography.arabic(
+                  color: Colors.white,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800,
+                ).copyWith(height: 1.8),
+                textAlign: TextAlign.center,
+              ),
             if (widget.mode == ReadingMode.surah) ...[
               Container(
                 width: 40,
@@ -756,7 +759,7 @@ class _SurahScreenState extends State<SurahScreen> {
                 ),
               ),
               Text(
-                'Begin in the Name of Allah',
+                isSurah9 ? _title.toUpperCase() : 'Begin in the Name of Allah',
                 style: AppTheme.body.copyWith(
                   color: Colors.white.withOpacity(0.8),
                   fontSize: 12,

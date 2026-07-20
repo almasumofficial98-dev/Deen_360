@@ -53,8 +53,9 @@ class _MainLayoutState extends State<MainLayout> {
     }
 
     if (_activeTab == target &&
-        _params.toString() == (payload ?? {}).toString())
+        _params.toString() == (payload ?? {}).toString()) {
       return;
+    }
 
     setState(() {
       _isBackNavigation = false;
@@ -209,6 +210,7 @@ class _MainLayoutState extends State<MainLayout> {
           'salahGuide',
           'qibla',
           'zakat',
+          'postStudio',
         ].contains(_activeTab);
       case 'duaCategories':
         return ['duaCategories', 'duaList'].contains(_activeTab);

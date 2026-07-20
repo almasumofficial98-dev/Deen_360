@@ -135,4 +135,53 @@ class SalahTrackerProvider with ChangeNotifier {
   String _dateToKey(DateTime date) {
     return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
   }
+
+  int getCurrentStreak() {
+    int streak = 0;
+    DateTime now = DateTime.now();
+    DateTime checkDay = DateTime(now.year, now.month, now.day);
+    
+    // If today hasn't reached 5 yet, check starting from yesterday
+    if (getCompletedCount(checkDay) < 5) {
+      final yest = checkDay.subtract(const Duration(days: 1));
+      if (getCompletedCount(yest) < 5) return 0;
+      checkDay = yest;
+    }
+    
+    while (getCompletedCount(checkDay) >= 5) {
+      streak++;
+      checkDay = checkDay.subtract(const Duration(days: 1));
+    }
+    return streak;
+  }
+
+  Map<String, int> getMonthlyStats(DateTime month) {
+    int totalLogged = 0;
+    int jamaatCount = 0;
+    int qazaCount = 0;
+    
+    final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
+    for (int day = 1; day <= daysInMonth; day++) {
+      final d = DateTime(month.year, month.month, day);
+      final key = _dateToKey(d);
+      final dayData = _history[key];
+      if (dayData != null) {
+        for (final entry in dayData.values) {
+          if (entry.status == SalahStatus.alone ||
+              entry.status == SalahStatus.jamaat ||
+              entry.status == SalahStatus.qaza) {
+            totalLogged++;
+          }
+          if (entry.status == SalahStatus.jamaat) jamaatCount++;
+          if (entry.status == SalahStatus.qaza) qazaCount++;
+        }
+      }
+    }
+    return {
+      'totalLogged': totalLogged,
+      'jamaatCount': jamaatCount,
+      'qazaCount': qazaCount,
+      'maxPossible': daysInMonth * 5,
+    };
+  }
 }

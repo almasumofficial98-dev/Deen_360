@@ -46,22 +46,93 @@ class _PostStudioScreenState extends State<PostStudioScreen> {
   bool _useGradient = false;
   int _gradientIndex = 0;
 
-  // Curated list of high-quality nature images with NO HUMANS or ANIMALS (Verified Unsplash IDs)
-  static const List<String> _curatedNaturePool = [
-    'https://images.unsplash.com/photo-1501854140801-50d01698950b', // Mountain
-    'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05', // Forest fog
-    'https://images.unsplash.com/photo-1441974231531-c6227db76b6e', // Sunlight forest
-    'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b', // Mountain range
+  String _selectedCategory = 'All Nature';
+
+  static const List<String> _mountainImages = [
+    'https://images.unsplash.com/photo-1506744038136-46273834b3fb', // Canyon landscape
+    'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b', // Mountain peaks
+    'https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99', // Snowy mountain
+    'https://images.unsplash.com/photo-1519681393784-d120267933ba', // Snowy range
+    'https://images.unsplash.com/photo-1540979388789-6cee28a1cdc9', // High mountain ridge
+    'https://images.unsplash.com/photo-1615196534250-a670810aa78e', // Alpine peak clouds
+    'https://images.unsplash.com/photo-1617369120004-4fc70312c5e6', // Majestic mountain valley
+    'https://images.unsplash.com/photo-1501854140801-50d01698950b', // Mountain sunset
     'https://images.unsplash.com/photo-1472214103451-9374bd1c798e', // Green hills
-    'https://images.unsplash.com/photo-1500382017468-9049fed747ef', // Single tree hills
-    'https://images.unsplash.com/photo-1433086966358-54859d0ee716', // Waterfal
-    'https://images.unsplash.com/photo-1497436072909-60f360e1d4b1', // Blue lake
-    'https://images.unsplash.com/photo-1506744038136-46273834b3fb', // Canyon
-    'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a', // Stars/Dark sky
-    'https://images.unsplash.com/photo-1505144808419-1957a94ca61e', // Tropical sea
-    'https://images.unsplash.com/photo-1439853949127-fa647821eba0', // Ocean wave
-    'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d', // River forest
+    'https://images.unsplash.com/photo-1465056836041-7f43ac27dcb5', // Mountain valley
+    'https://images.unsplash.com/photo-1454496522488-7a8e488e8606', // Misty snow peaks
+    'https://images.unsplash.com/photo-1434394354979-a235cd36269d', // Rocky mountain ridge
+    'https://images.unsplash.com/photo-1517411032315-54ef2cb783bb', // Golden hour mountains
+    'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09', // Green mountain slopes
+    'https://images.unsplash.com/photo-1491555103944-7c647fd857e6', // Alps snow peak
+    'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff', // Sunlit mountain cliff
+    'https://images.unsplash.com/photo-1519904981063-b0cf448d479e', // Serene mountain ridge
+    'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800', // Pine forest valley
   ];
+
+  static const List<String> _flowerImages = [
+    'https://images.unsplash.com/photo-1615280825886-fa817c0a06cc', // Flower meadow
+    'https://plus.unsplash.com/premium_photo-1676068243733-df1880c2aef8', // Premium floral bloom
+    'https://images.unsplash.com/photo-1613539246066-78db6ec4ff0f', // Wild botanical flowers
+    'https://images.unsplash.com/photo-1490750967868-88aa4486c946', // Wildflowers
+    'https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07', // Yellow wildflowers
+    'https://images.unsplash.com/photo-1508610048659-a06b669e3321', // Cherry blossoms
+    'https://images.unsplash.com/photo-1518531933037-91b2f5f229cc', // Tropical foliage
+    'https://images.unsplash.com/photo-1470240731273-7821a6eeb6bd', // Lavender field
+    'https://images.unsplash.com/photo-1501004318641-b39e6451bec6', // Dew on leaves
+    'https://images.unsplash.com/photo-1441974231531-c6227db76b6e', // Sunlit forest trees
+    'https://images.unsplash.com/photo-1502082553048-f009c37129b9', // Green leaf canopy
+    'https://images.unsplash.com/photo-1528183429752-a97d0bf99b5a', // Bamboo foliage
+    'https://images.unsplash.com/photo-1516205651411-aef33a44f7c2', // Sunflower field
+    'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9', // Pine needle branches
+  ];
+
+  static const List<String> _skyImages = [
+    'https://images.unsplash.com/photo-1534088568595-a066f410bcda', // Sunset sky
+    'https://images.unsplash.com/photo-1513002749550-c59d786b8e6c', // Blue sky clouds
+    'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a', // Starry night sky
+    'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86', // Deep night stars
+    'https://images.unsplash.com/photo-1509114397022-ed747cca3f65', // Twilight dawn
+    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e', // Sunset horizon
+    'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05', // Misty forest sky
+    'https://images.unsplash.com/photo-1500382017468-9049fed747ef', // Sun rays horizon
+    'https://images.unsplash.com/photo-1504608524841-42fe6f032b4b', // Dramatic clouds sky
+    'https://images.unsplash.com/photo-1516339901601-2e1b62dc0c45', // Milky way galaxy
+    'https://images.unsplash.com/photo-1495616811223-4d98c6e9c869', // Golden sunrise glow
+    'https://images.unsplash.com/photo-1517685352821-92cf88aee5a5', // Pastel twilight sky
+    'https://images.unsplash.com/photo-1532978379173-523e16f371f2', // Midday blue sky
+    'https://images.unsplash.com/photo-1528722828814-77b9b83aafb2', // Night sky cosmos
+    'https://images.unsplash.com/photo-1502472584811-0a2f2feb8968', // Cloudscape sunset
+  ];
+
+  static const List<String> _seaImages = [
+    'https://images.unsplash.com/photo-1505144808419-1957a94ca61e', // Turquoise sea
+    'https://images.unsplash.com/photo-1439853949127-fa647821eba0', // Ocean wave
+    'https://images.unsplash.com/photo-1497436072909-60f360e1d4b1', // Mountain lake
+    'https://images.unsplash.com/photo-1433086966358-54859d0ee716', // Forest waterfall
+    'https://images.unsplash.com/photo-1500375592092-40eb2168fd21', // Sandy shoreline
+    'https://images.unsplash.com/photo-1518837695005-2083093ee35b', // Blue sea water
+    'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d', // Peaceful river
+    'https://images.unsplash.com/photo-1484821582734-6c6c9f99a672', // Clear lake water
+    'https://images.unsplash.com/photo-1476673160081-cf065607f449', // Deep sea surface
+    'https://images.unsplash.com/photo-1498855926480-d98e83099315', // Mist over calm lake
+    'https://images.unsplash.com/photo-1503177119275-0aa32b3a9368', // Shore waves at dusk
+    'https://images.unsplash.com/photo-1518495973542-4542c06a5843', // Water stream sun reflection
+    'https://images.unsplash.com/photo-1495584816685-4bdbf1b5057e', // Coastal sea rocks & waves
+    'https://images.unsplash.com/photo-1468413253725-0d5181091126', // Ocean horizon
+  ];
+
+  static Map<String, List<String>> get _natureCategories => {
+    'All Nature': [
+      ..._mountainImages,
+      ..._flowerImages,
+      ..._skyImages,
+      ..._seaImages,
+    ],
+    'Mountains': _mountainImages,
+    'Flowers': _flowerImages,
+    'Sky & Stars': _skyImages,
+    'Sea & Water': _seaImages,
+  };
 
   static const List<LinearGradient> _spiritualGradients = [
     LinearGradient(
@@ -106,11 +177,16 @@ class _PostStudioScreenState extends State<PostStudioScreen> {
     super.dispose();
   }
 
-  void _updateImageUrl() {
+  void _updateImageUrl([String? category]) {
     setState(() {
+      if (category != null) {
+        _selectedCategory = category;
+      }
+      final pool =
+          _natureCategories[_selectedCategory] ??
+          _natureCategories['All Nature']!;
       final random = Random();
-      final base =
-          _curatedNaturePool[random.nextInt(_curatedNaturePool.length)];
+      final base = pool[random.nextInt(pool.length)];
       _currentImageUrl = "$base?auto=format&fit=crop&w=1080&q=80";
     });
   }
@@ -373,7 +449,11 @@ class _PostStudioScreenState extends State<PostStudioScreen> {
         backgroundColor: Colors.transparent,
         builder: (ctx) => _buildPickerModal(
           title: 'Display Mode',
-          items: ['Translation Only', 'Arabic Only', 'Both (Arabic + Translation)'],
+          items: [
+            'Translation Only',
+            'Arabic Only',
+            'Both (Arabic + Translation)',
+          ],
           itemBuilder: (m) => ListTile(
             title: Text(m, style: const TextStyle(fontWeight: FontWeight.bold)),
             onTap: () => Navigator.pop(ctx, m),
@@ -392,7 +472,8 @@ class _PostStudioScreenState extends State<PostStudioScreen> {
             _inputText = v.translation;
           }
           // Include attribution in the source/reference field
-          _inputSource = "${surah['name']} • Ayah ${v.ayahNumber}\n$attribution";
+          _inputSource =
+              "${surah['name']} • Ayah ${v.ayahNumber}\n$attribution";
         });
       }
     } catch (_) {
@@ -454,9 +535,9 @@ class _PostStudioScreenState extends State<PostStudioScreen> {
       setState(() => _isLoadingContent = false);
 
       if (hadiths.isEmpty) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('No hadiths found in this chapter.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No hadiths found in this chapter.')),
+        );
         return;
       }
 
@@ -527,7 +608,10 @@ class _PostStudioScreenState extends State<PostStudioScreen> {
                 const Spacer(),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close_rounded, color: AppTheme.textMuted),
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    color: AppTheme.textMuted,
+                  ),
                 ),
               ],
             ),
@@ -537,7 +621,8 @@ class _PostStudioScreenState extends State<PostStudioScreen> {
             child: ListView.separated(
               padding: const EdgeInsets.only(bottom: 40),
               itemCount: items.length,
-              separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
+              separatorBuilder: (_, index) =>
+                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
               itemBuilder: (ctx, idx) => itemBuilder(items[idx]),
             ),
           ),
@@ -567,123 +652,129 @@ class _PostStudioScreenState extends State<PostStudioScreen> {
                 },
                 onScaleUpdate: (details) {
                   setState(() {
-                    _fontSize = (_baseFontSize * details.scale).clamp(10.0, 80.0);
+                    _fontSize = (_baseFontSize * details.scale).clamp(
+                      10.0,
+                      80.0,
+                    );
                   });
                 },
                 child: RepaintBoundary(
                   key: _boundaryKey,
-                child: AspectRatio(
-                  aspectRatio: 9 / 16,
-                  child: Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[900],
-                      image: _useGradient
-                          ? null
-                          : DecorationImage(
-                              image: NetworkImage(_currentImageUrl),
-                              fit: BoxFit.cover,
-                            ),
-                      gradient: _useGradient
-                          ? _spiritualGradients[_gradientIndex]
-                          : null,
-                    ),
+                  child: AspectRatio(
+                    aspectRatio: 9 / 16,
                     child: Container(
-                      padding: const EdgeInsets.all(40),
+                      width: double.infinity,
                       decoration: BoxDecoration(
-                        color: Colors.black.withValues(
-                          alpha: _useGradient ? 0.2 : _overlayOpacity,
-                        ),
+                        color: Colors.grey[900],
+                        image: _useGradient
+                            ? null
+                            : DecorationImage(
+                                image: NetworkImage(_currentImageUrl),
+                                fit: BoxFit.cover,
+                              ),
+                        gradient: _useGradient
+                            ? _spiritualGradients[_gradientIndex]
+                            : null,
                       ),
-                      child: Column(
-                        children: [
-                          Expanded(
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              alignment: Alignment.center,
-                              child: ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  maxWidth: MediaQuery.of(context).size.width - 80,
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Icon(
-                                      Icons.format_quote_rounded,
-                                      color: Colors.white70,
-                                      size: 40,
-                                    ),
-                                    const SizedBox(height: 20),
-                                    Text(
-                                      _inputText,
-                                      textAlign: _textAlign,
-                                      style: TextStyle(
-                                        color: _textColor,
-                                        fontSize: _fontSize,
-                                        fontWeight: FontWeight.w800,
-                                        height: 1.4,
-                                        shadows: [
-                                          Shadow(
-                                            color: Colors.black.withValues(alpha: 0.5),
-                                            blurRadius: 10,
-                                            offset: const Offset(0, 4),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 24),
-                                    Container(
-                                      width: 40,
-                                      height: 2,
-                                      color: Colors.white38,
-                                    ),
-                                    const SizedBox(height: 24),
-                                    Text(
-                                      _inputSource.toUpperCase(),
-                                      style: const TextStyle(
+                      child: Container(
+                        padding: const EdgeInsets.all(40),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(
+                            alpha: _useGradient ? 0.2 : _overlayOpacity,
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            Expanded(
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.center,
+                                child: ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    maxWidth:
+                                        MediaQuery.of(context).size.width - 80,
+                                  ),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(
+                                        Icons.format_quote_rounded,
                                         color: Colors.white70,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w900,
-                                        letterSpacing: 2,
+                                        size: 40,
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(height: 20),
+                                      Text(
+                                        _inputText,
+                                        textAlign: _textAlign,
+                                        style: TextStyle(
+                                          color: _textColor,
+                                          fontSize: _fontSize,
+                                          fontWeight: FontWeight.w800,
+                                          height: 1.4,
+                                          shadows: [
+                                            Shadow(
+                                              color: Colors.black.withValues(
+                                                alpha: 0.5,
+                                              ),
+                                              blurRadius: 10,
+                                              offset: const Offset(0, 4),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 24),
+                                      Container(
+                                        width: 40,
+                                        height: 2,
+                                        color: Colors.white38,
+                                      ),
+                                      const SizedBox(height: 24),
+                                      Text(
+                                        _inputSource.toUpperCase(),
+                                        style: const TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w900,
+                                          letterSpacing: 2,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 30),
-                          Opacity(
-                            opacity: 0.6,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 1.5,
+                            const SizedBox(height: 30),
+                            Opacity(
+                              opacity: 0.6,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
                                 ),
-                              ),
-                              child: const Text(
-                                'DEEN 360',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 10,
-                                  letterSpacing: 2,
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: const Text(
+                                  'DEEN 360',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 10,
+                                    letterSpacing: 2,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
             ),
 
             SafeArea(
@@ -752,6 +843,47 @@ class _PostStudioScreenState extends State<PostStudioScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
+                        // Nature Category Chips
+                        SizedBox(
+                          height: 34,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            physics: const BouncingScrollPhysics(),
+                            children: _natureCategories.keys.map((cat) {
+                              final isSelected =
+                                  !_useGradient && _selectedCategory == cat;
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 6),
+                                child: ChoiceChip(
+                                  selected: isSelected,
+                                  label: Text(
+                                    cat,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : AppTheme.text,
+                                    ),
+                                  ),
+                                  backgroundColor: AppTheme.inputBg,
+                                  selectedColor: primaryColor,
+                                  side: BorderSide.none,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  onSelected: (_) {
+                                    if (_useGradient) {
+                                      setState(() => _useGradient = false);
+                                    }
+                                    _updateImageUrl(cat);
+                                  },
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
@@ -818,7 +950,8 @@ class _PostStudioScreenState extends State<PostStudioScreen> {
                                   value: _fontSize,
                                   min: 10,
                                   max: 80,
-                                  onChanged: (v) => setState(() => _fontSize = v),
+                                  onChanged: (v) =>
+                                      setState(() => _fontSize = v),
                                 ),
                               ),
                             ),

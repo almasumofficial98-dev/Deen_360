@@ -85,12 +85,44 @@ class _HadithListScreenState extends State<HadithListScreen> {
                 child: Text('#${h.id}', style: TextStyle(color: context.watch<ThemeProvider>().primaryColor, fontWeight: FontWeight.w900, fontSize: 13)),
               ),
               const Spacer(),
-              if (h.grades.isNotEmpty)
+              if (h.grades.isNotEmpty) ...[
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(color: context.watch<ThemeProvider>().primaryColor.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(6)),
                   child: Text(h.grades[0]['grade'] ?? '', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: context.watch<ThemeProvider>().primaryColor)),
                 ),
+                const SizedBox(width: 8),
+              ],
+              GestureDetector(
+                onTap: () {
+                  widget.onNavigate('postStudio', {
+                    'text': h.en,
+                    'source': '${h.book} • Hadith #${h.id}',
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppTheme.inputBg,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(Icons.palette_rounded, size: 12, color: AppTheme.textMuted),
+                      SizedBox(width: 4),
+                      Text(
+                        'Card',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
